@@ -17,6 +17,9 @@ export default async function handler(request, response) {
       return response.status(400).json({ success: false, message: 'Data tidak lengkap atau Nomor PPU tidak ada.' });
     }
 
+    // Tambahkan timestamp saat data disimpan
+    data.savedAt = new Date().toISOString();
+
     const ppuNumber = data.projectInfo.ppuNumber;
 
     // Simpan data ke Vercel KV menggunakan ppuNumber sebagai kunci unik
