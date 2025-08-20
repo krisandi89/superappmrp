@@ -654,17 +654,20 @@
                 const searchTerm = filter.toUpperCase();
                 const filteredData = allPpuData.filter(data => 
                     data.projectInfo.ppuNumber.toUpperCase().includes(searchTerm) ||
-                    data.projectInfo.name.toUpperCase().includes(searchTerm) ||
-                    data.projectInfo.location.toUpperCase().includes(searchTerm)
+                    (data.projectInfo.name && data.projectInfo.name.toUpperCase().includes(searchTerm)) ||
+                    (data.projectInfo.location && data.projectInfo.location.toUpperCase().includes(searchTerm))
                 );
 
                 if (filteredData.length === 0) {
                     ppuListContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">Tidak ada data PPU yang cocok.</p>`;
                     return;
                 }
+                
+                filteredData.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
 
                 filteredData.forEach(data => {
                     const total = data.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                    const savedDate = data.savedAt ? new Date(data.savedAt).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : 'N/A';
                     const card = document.createElement('div');
                     card.className = 'card p-4 flex flex-col justify-between cursor-pointer hover:ring-2 hover:ring-indigo-500 transition';
                     card.innerHTML = `
@@ -674,8 +677,13 @@
                             <p class="text-xs text-gray-400"><i class="fas fa-map-marker-alt mr-1"></i>${data.projectInfo.location || 'Tanpa Lokasi'}</p>
                         </div>
                         <div class="mt-4 pt-2 border-t">
-                            <p class="text-xs text-gray-500">Total Pengajuan</p>
-                            <p class="font-semibold text-indigo-600">${formatToCurrency(total)}</p>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs text-gray-500">Total Pengajuan</p>
+                                    <p class="font-semibold text-indigo-600">${formatToCurrency(total)}</p>
+                                </div>
+                                <p class="text-xs text-gray-400">${savedDate}</p>
+                            </div>
                         </div>
                     `;
                     card.addEventListener('click', () => selectPpu(data));
@@ -709,7 +717,7 @@
                             fetch(`/api/ambilPPU?ppuNumber=${key}`).then(res => res.json())
                         );
                         const allResults = await Promise.all(ppuDetailsPromises);
-                        allPpuData = allResults.map(res => res.data).filter(Boolean); // Filter out any null/undefined data
+                        allPpuData = allResults.map(res => res.data).filter(Boolean);
                         renderPpuList();
                     } else {
                         ppuListContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">Belum ada data PPU yang tersimpan.</p>`;
@@ -952,7 +960,7 @@
                             finalDescription += `<br/><div style="font-size: 10px; color: #555; padding-left: 10px;">Ket. Libur:<ul style="margin: 0; padding-left: 15px;">${holidayList}</ul></div>`;
                         }
                     } else {
-                        finalDescription = `${formatDateForReport(exp.date)} ${exp.description}`;
+                        finalDescription = `${formatDateForReport(exp.date)} - ${exp.description}`;
                     }
                     return `<tr><td class="text-center">${index + 2}</td><td>${finalDescription}</td><td class="text-right">-</td><td class="text-right">${formatToCurrency(exp.amount)}</td></tr>`;
                 }).join('');
