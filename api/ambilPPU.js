@@ -1,7 +1,7 @@
-// Import library Vercel KV untuk berinteraksi dengan database
+// /api/ambilPPU.js
 import { kv } from '@vercel/kv';
 
-// Export fungsi utama yang akan dijalankan oleh Vercel
+// Fungsi utama yang akan dijalankan oleh Vercel
 export default async function handler(request, response) {
   // Hanya izinkan metode GET untuk mengambil data
   if (request.method !== 'GET') {
@@ -9,15 +9,18 @@ export default async function handler(request, response) {
   }
 
   try {
-    // Ambil ppuNumber dari query URL (contoh: /api/ambilPPU?ppuNumber=PPU-123)
-    const { ppuNumber } = request.query;
+    // Ambil ppuNumber dan username dari query URL
+    const { ppuNumber, username } = request.query;
 
-    if (!ppuNumber) {
-      return response.status(400).json({ success: false, message: 'Nomor PPU diperlukan.' });
+    if (!ppuNumber || !username) {
+      return response.status(400).json({ success: false, message: 'Nomor PPU dan Username diperlukan.' });
     }
 
-    // Ambil data dari Vercel KV berdasarkan ppuNumber
-    const data = await kv.get(ppuNumber);
+    // Buat kunci yang benar untuk mengambil data
+    const key = `${username}-${ppuNumber}`;
+
+    // Ambil data dari Vercel KV berdasarkan kunci
+    const data = await kv.get(key);
 
     // Jika data tidak ditemukan, kirim pesan error
     if (!data) {
