@@ -60,7 +60,7 @@
         /* Animasi untuk notifikasi */
         @keyframes notificationSlideIn {
             from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
         }
         @keyframes notificationSlideOut {
             from { transform: translateX(0); opacity: 1; }
@@ -148,7 +148,7 @@
             <h3 id="modal-title" class="text-lg font-bold text-gray-800 mb-4"></h3>
             <p id="modal-message" class="text-gray-600 mb-6"></p>
             <div class="flex justify-end space-x-3">
-                <button id="modal-cancel" class="btn-secondary rounded-lg px-4 py-2">Batal</button>
+                <button id="modal-cancel" class="btn btn-secondary rounded-lg px-4 py-2">Batal</button>
                 <button id="modal-confirm" class="btn-primary rounded-lg px-4 py-2">OK</button>
             </div>
         </div>
@@ -180,21 +180,18 @@
             notification.style.animation = 'notificationSlideIn 0.3s ease-out forwards';
             
             notification.innerHTML = `
-                <div class="border-l-4 ${types[type].bg} h-full"></div>
-                <div class="p-4">
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0">
-                            <i class="${types[type].icon} text-xl ${types[type].bg.replace('bg-', 'text-')}"></i>
-                        </div>
-                        <div class="ml-3 w-0 flex-1">
-                            <p class="text-sm font-medium text-gray-900">${message}</p>
-                        </div>
-                        <div class="ml-4 flex-shrink-0 flex">
-                            <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none">
-                                <span class="sr-only">Close</span>
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
+                <div class="flex items-center p-4">
+                    <div class="flex-shrink-0">
+                        <i class="${types[type].icon} text-xl ${types[type].bg.replace('bg-', 'text-')}"></i>
+                    </div>
+                    <div class="ml-3 w-0 flex-1">
+                        <p class="text-sm font-medium text-gray-900">${message}</p>
+                    </div>
+                    <div class="ml-4 flex-shrink-0 flex">
+                        <button class="inline-flex text-gray-400 hover:text-gray-500 focus:outline-none">
+                            <span class="sr-only">Close</span>
+                            <i class="fas fa-times"></i>
+                        </button>
                     </div>
                 </div>
             `;
@@ -727,6 +724,49 @@
             const ppuListSearch = document.getElementById('ppu-list-search');
             const ppuListLoading = document.getElementById('ppu-list-loading');
 
+            window.rekap_selectPpu = (data) => {
+                const { projectInfo, expenses } = data;
+                const totalProposal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+                state.projectInfo = projectInfo;
+                state.budget.amount = totalProposal;
+                state.budget.date = projectInfo.proposalDate || new Date().toISOString().slice(0, 10);
+                state.expenses = []; 
+
+                renderAll();
+                showNotification(`Data untuk ${projectInfo.ppuNumber} berhasil dimuat!`, 'success');
+                showMainPage();
+            };
+
+            window.rekap_handleDeletePpu = (event, ppuNumber) => {
+                event.stopPropagation();
+                showModal('Konfirmasi Hapus', `Anda yakin ingin menghapus PPU "${ppuNumber}"? Tindakan ini tidak dapat dibatalkan.`, 'confirm', async () => {
+                    const username = localStorage.getItem('loggedInUser');
+                    if (!username) {
+                        showNotification('Sesi tidak valid. Silakan login kembali.', 'error');
+                        return;
+                    }
+                    
+                    showNotification('Menghapus PPU...', 'info');
+                    try {
+                        const response = await fetch('/api/hapusPPU', {
+                            method: 'DELETE',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username, ppuNumber })
+                        });
+                        const result = await response.json();
+                        if (!response.ok) throw new Error(result.message || 'Gagal menghapus data');
+                        
+                        showNotification('PPU berhasil dihapus.', 'success');
+                        allPpuData = allPpuData.filter(d => d.projectInfo.ppuNumber !== ppuNumber);
+                        renderPpuList(ppuListSearch.value);
+                    } catch (error) {
+                        console.error('Gagal menghapus PPU:', error);
+                        showNotification(error.message, 'error');
+                    }
+                });
+            };
+
             const renderPpuList = (filter = '') => {
                 ppuListContainer.innerHTML = '';
                 const searchTerm = filter.toUpperCase();
@@ -747,40 +787,33 @@
                     const total = data.expenses.reduce((sum, exp) => sum + exp.amount, 0);
                     const savedDate = data.savedAt ? new Date(data.savedAt).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : 'N/A';
                     const card = document.createElement('div');
-                    card.className = 'card p-4 flex flex-col justify-between cursor-pointer hover:ring-2 hover:ring-indigo-500 transition';
+                    card.className = 'card p-4 flex flex-col justify-between relative transition hover:shadow-lg';
+                    
+                    const encodedData = encodeURIComponent(JSON.stringify(data));
+
                     card.innerHTML = `
-                        <div>
-                            <p class="font-bold text-gray-800">${data.projectInfo.ppuNumber}</p>
-                            <p class="text-sm text-gray-600 truncate">${data.projectInfo.name || 'Tanpa Nama Proyek'}</p>
-                            <p class="text-xs text-gray-400"><i class="fas fa-map-marker-alt mr-1"></i>${data.projectInfo.location || 'Tanpa Lokasi'}</p>
-                        </div>
-                        <div class="mt-4 pt-2 border-t">
-                            <div class="flex justify-between items-center">
-                                <div>
-                                    <p class="text-xs text-gray-500">Total Pengajuan</p>
-                                    <p class="font-semibold text-indigo-600">${formatToCurrency(total)}</p>
+                        <button onclick="window.rekap_handleDeletePpu(event, '${data.projectInfo.ppuNumber}')" class="absolute top-2 right-2 text-gray-400 hover:text-red-600 transition z-10 p-2 rounded-full hover:bg-red-100" title="Hapus PPU">
+                            <i class="fas fa-trash-alt fa-sm"></i>
+                        </button>
+                        <div class="cursor-pointer" onclick="window.rekap_selectPpu(JSON.parse(decodeURIComponent('${encodedData}')))">
+                            <div class="pr-8">
+                                <p class="font-bold text-gray-800">${data.projectInfo.ppuNumber}</p>
+                                <p class="text-sm text-gray-600 truncate">${data.projectInfo.name || 'Tanpa Nama Proyek'}</p>
+                                <p class="text-xs text-gray-400"><i class="fas fa-map-marker-alt mr-1"></i>${data.projectInfo.location || 'Tanpa Lokasi'}</p>
+                            </div>
+                            <div class="mt-4 pt-2 border-t">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-xs text-gray-500">Total Pengajuan</p>
+                                        <p class="font-semibold text-indigo-600">${formatToCurrency(total)}</p>
+                                    </div>
+                                    <p class="text-xs text-gray-400">${savedDate}</p>
                                 </div>
-                                <p class="text-xs text-gray-400">${savedDate}</p>
                             </div>
                         </div>
                     `;
-                    card.addEventListener('click', () => selectPpu(data));
                     ppuListContainer.appendChild(card);
                 });
-            };
-
-            const selectPpu = (data) => {
-                const { projectInfo, expenses } = data;
-                const totalProposal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-
-                state.projectInfo = projectInfo;
-                state.budget.amount = totalProposal;
-                state.budget.date = projectInfo.proposalDate || new Date().toISOString().slice(0, 10);
-                state.expenses = []; 
-
-                renderAll();
-                showNotification(`Data untuk ${projectInfo.ppuNumber} berhasil dimuat!`, 'success');
-                showMainPage();
             };
 
             window.fetchAllPpuDataForList = async () => {
@@ -1111,9 +1144,9 @@
                 return dateObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             })(formData.reportDate);
             const reportHTML = `<!DOCTYPE html><html lang="id"><head><title>Preview Laporan Harian</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Inter',sans-serif;background-color:#e5e7eb;display:flex;justify-content:center;padding:2rem;} .no-print{display:block;} @page{size:A4 landscape;margin:10mm;} .report-container{width:277mm;height:190mm;display:flex;border:1px solid #ccc;background-color:white;box-shadow:0 0 20px rgba(0,0,0,0.15);overflow:hidden;} .main-content{flex:2;padding:20px;border-right:1px solid #ddd;display:flex;flex-direction:column;} .photo-sidebar{flex:1;padding:20px;display:flex;flex-direction:column;background-color:#f9fafb;justify-content:flex-start;gap:15px;} .photo-item img{aspect-ratio:16 / 9;width:100%;object-fit:cover;border-radius:8px;border:1px solid #ddd;} .section-title{font-weight:700;color:#1f2937;border-bottom:2px solid #3b82f6;padding-bottom:5px;margin-top:1rem;margin-bottom:8px;font-size:0.9rem;text-transform:uppercase;} .info-table{width:100%;border-collapse:collapse;} .info-table td{padding:3px 0;font-size:0.85rem;} .content-text,.list-disc{font-size:0.85rem;line-height:1.5;} .signature-area{margin-top:auto;} @media print{body{margin:0;padding:0;background-color:white;} .no-print{display:none;} .report-container{border:none;box-shadow:none;width:100%;height:100%;page-break-after:always;}}</style></head><body><div class="flex flex-col items-center"><div class="report-container"><div class="main-content"><div class="flex justify-between items-center pb-3 mb-3 border-b-4 border-gray-800"><img src="https://raw.githubusercontent.com/krisandi89/rekap/main/LOGO%20MULTIBANGUN%20(Primary).png" alt="Logo" class="h-7"><div class="text-center"><h1 class="text-xl font-bold uppercase">Laporan Harian Proyek</h1></div><div class="w-16"></div></div><table class="info-table mb-3"><tr><td class="w-1/4 font-semibold">Tanggal Laporan</td><td class="w-px px-2">:</td><td>${formattedDate}</td></tr><tr><td class="w-1/4 font-semibold">Nama Proyek</td><td class="w-px px-2">:</td><td>${formData.projectId || '-'}</td></tr><tr><td class="font-semibold">Lokasi Proyek</td><td class="px-2">:</td><td>${formData.projectLocation || '-'}</td></tr><tr><td class="font-semibold">Cuaca</td><td class="px-2">:</td><td>${formData.weather || '-'}</td></tr></table><h3 class="section-title">Kegiatan Utama Hari Ini</h3><ul class="list-disc list-inside content-text pl-4 mb-2">${activitiesListHtml || '<li>-</li>'}</ul><h3 class="section-title">Masalah / Kendala</h3><p class="content-text mb-2">${formData.issuesConstraints || 'Tidak ada.'}</p><h3 class="section-title">Rencana Kerja Esok Hari</h3><p class="content-text mb-2">${formData.nextDayPlan || '-'}</p><div class="flex justify-around mt-auto text-xs pt-4 signature-area"><div class="text-center"><p class="font-semibold">Dibuat Oleh,</p><div class="h-16"></div><p class="font-bold underline">${formData.reporterName || '....................'}</p><p>${formData.reporterPosition || '....................'}</p></div><div class="text-center"><p class="font-semibold">Diketahui Oleh,</p><div class="h-16"></div><p class="font-bold underline">${formData.approverName || '....................'}</p><p>${formData.approverPosition || '....................'}</p></div></div></div><div class="photo-sidebar"><h3 class="text-center font-bold text-base mb-2 border-b-2 border-gray-300 pb-2">DOKUMENTASI FOTO</h3><div class="flex flex-col justify-between flex-grow">${photosGridHtml || '<div class="text-center text-gray-500 mt-8">Tidak ada foto.</div>'}</div></div></div><div class="no-print text-center mt-6"><button onclick="window.print()" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-green-700 transition">Cetak</button><button onclick="window.close()" class="bg-gray-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-700 ml-4 transition">Tutup</button></div></div></body></html>`;
-                const newWindow = window.open('', '_blank');
-                newWindow.document.write(reportHTML);
-                newWindow.document.close();
+            const newWindow = window.open('', '_blank');
+            newWindow.document.write(reportHTML);
+            newWindow.document.close();
         }
     </script>
 </body>
