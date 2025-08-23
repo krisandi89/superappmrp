@@ -1,7 +1,7 @@
-// Import library Vercel KV untuk berinteraksi dengan database
+// /api/simpanPPU.js
 import { kv } from '@vercel/kv';
 
-// Export fungsi utama yang akan dijalankan oleh Vercel
+// Fungsi utama yang akan dijalankan oleh Vercel
 export default async function handler(request, response) {
   // Hanya izinkan metode POST untuk menyimpan data
   if (request.method !== 'POST') {
@@ -9,24 +9,26 @@ export default async function handler(request, response) {
   }
 
   try {
-    // Ambil data PPU dari body request
-    const { data } = request.body;
+    // Ambil data PPU dan username dari body request
+    const { data, username } = request.body;
 
-    // Pastikan data dan ppuNumber ada
-    if (!data || !data.projectInfo || !data.projectInfo.ppuNumber) {
-      return response.status(400).json({ success: false, message: 'Data tidak lengkap atau Nomor PPU tidak ada.' });
+    // Pastikan data, ppuNumber, dan username ada
+    if (!data || !data.projectInfo || !data.projectInfo.ppuNumber || !username) {
+      return response.status(400).json({ success: false, message: 'Data tidak lengkap. Username dan Nomor PPU wajib diisi.' });
     }
 
     // Tambahkan timestamp saat data disimpan
     data.savedAt = new Date().toISOString();
 
     const ppuNumber = data.projectInfo.ppuNumber;
+    // Buat kunci unik dengan format: username-ppuNumber
+    const key = `${username}-${ppuNumber}`;
 
-    // Simpan data ke Vercel KV menggunakan ppuNumber sebagai kunci unik
-    await kv.set(ppuNumber, data);
+    // Simpan data ke Vercel KV menggunakan kunci unik tersebut
+    await kv.set(key, data);
 
     // Kirim respon sukses
-    return response.status(200).json({ success: true, message: 'Data PPU berhasil disimpan.', ppuNumber: ppuNumber });
+    return response.status(200).json({ success: true, message: 'Data PPU berhasil disimpan.', key: key });
 
   } catch (error) {
     console.error('Error saat menyimpan PPU:', error);
