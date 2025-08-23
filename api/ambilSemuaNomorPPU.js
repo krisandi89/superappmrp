@@ -1,7 +1,7 @@
-// Import library Vercel KV untuk berinteraksi dengan database
+// /api/ambilSemuaNomorPPU.js
 import { kv } from '@vercel/kv';
 
-// Export fungsi utama yang akan dijalankan oleh Vercel
+// Fungsi utama yang akan dijalankan oleh Vercel
 export default async function handler(request, response) {
   // Hanya izinkan metode GET
   if (request.method !== 'GET') {
@@ -9,10 +9,18 @@ export default async function handler(request, response) {
   }
 
   try {
+    // Ambil username dari query URL
+    const { username } = request.query;
+    if (!username) {
+        return response.status(400).json({ success: false, message: 'Username diperlukan.' });
+    }
+
     const keys = [];
-    // kv.scanIterator akan memindai semua kunci di database
-    // Kita filter hanya yang berawalan "PPU-"
-    for await (const key of kv.scanIterator({ match: 'PPU-*' })) {
+    // Buat pola pencarian kunci berdasarkan username
+    const matchPattern = `${username}-PPU-*`;
+    
+    // Pindai semua kunci di database yang cocok dengan pola
+    for await (const key of kv.scanIterator({ match: matchPattern })) {
       keys.push(key);
     }
 
