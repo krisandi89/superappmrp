@@ -7,6 +7,7 @@ export default async function handler(request, response) {
   }
 
   try {
+    // PERBAIKAN: Menggunakan variabel 'number' agar sesuai dengan data yang dikirim dari aplikasi.
     const { username, number } = request.body;
 
     if (!username || !number) {
@@ -22,4 +23,8 @@ export default async function handler(request, response) {
         return response.status(404).json({ success: false, message: 'Rekap tidak ditemukan untuk dihapus.' });
     }
 
-  } catch (err
+  } catch (error) {
+    console.error('Error saat menghapus Rekap:', error);
+    return response.status(500).json({ success: false, message: 'Terjadi kesalahan pada server.' });
+  }
+}
