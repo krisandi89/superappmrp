@@ -396,7 +396,6 @@
                 
                 showNotification(`Menghapus ${type.toUpperCase()}...`, 'info');
                 try {
-                    // **FIX**: Corrected the API endpoint path
                     const apiPath = type === 'ppu' ? '/api/hapusPPU' : '/api/hapusRekap';
                     const response = await fetch(apiPath, {
                         method: 'DELETE',
@@ -836,7 +835,8 @@
                     const amount = parseCurrency(DOMElements.standardAmount.value);
                     const date = parseDateFromInput(DOMElements.projectInfoFields.projectDate.value);
                     if (!date || !description || amount <= 0) return showModal('Input Tidak Lengkap', 'Mohon lengkapi "Tanggal pengeluaran uang", Keterangan, dan Jumlah.');
-                    state.expenses.push({ id: state.editingId || `exp-${Date.now()}`, isPeriod: false, date, description, amount, category: category === 'Lainnya' ? description.split(' ')[0] : category });
+                    // **FIX**: Always use the category from the dropdown, even if it's "Lainnya"
+                    state.expenses.push({ id: state.editingId || `exp-${Date.now()}`, isPeriod: false, date, description, amount, category: category });
                 }
                 renderAll();
                 resetForm();
@@ -911,7 +911,6 @@
                     } else {
                         finalDescription = exp.description;
                     }
-                    // **ADDITION**: Add category tag to the description cell
                     const categoryTag = `<span class="category-tag">${exp.category}</span>`;
                     return `<tr><td class="text-center">${index + 1}</td><td>${finalDescription} ${categoryTag}</td><td class="text-right">${formatToCurrency(exp.amount)}</td></tr>`;
                 }).join('');
@@ -1204,7 +1203,8 @@
                     const amount = parseCurrency(DOMElements.standardAmount.value);
                     const date = parseDateFromInput(DOMElements.standardDate.value);
                     if (!date || !description || amount <= 0) return showModal('Input Tidak Lengkap', 'Mohon lengkapi Tanggal, Keterangan, dan Jumlah.');
-                    state.expenses.push({ id: state.editingId || `exp-${Date.now()}`, isPeriod: false, date, description, amount, category: category === 'Lainnya' ? description.split(' ')[0] : category });
+                    // **FIX**: Always use the category from the dropdown, even if it's "Lainnya"
+                    state.expenses.push({ id: state.editingId || `exp-${Date.now()}`, isPeriod: false, date, description, amount, category: category });
                 }
                 
                 renderSummary();
@@ -1270,7 +1270,6 @@
                     } else {
                         finalDescription = `${formatDateForReport(exp.date)} - ${exp.description}`;
                     }
-                    // **ADDITION**: Add category tag to the description cell
                     const categoryTag = `<span class="category-tag">${exp.category}</span>`;
                     return `<tr><td class="text-center">${index + 2}</td><td>${finalDescription} ${categoryTag}</td><td class="text-right">-</td><td class="text-right">${formatToCurrency(exp.amount)}</td></tr>`;
                 }).join('');
