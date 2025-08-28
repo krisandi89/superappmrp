@@ -396,13 +396,14 @@
                 
                 showNotification(`Menghapus ${type.toUpperCase()}...`, 'info');
                 try {
-                    const response = await fetch(`/api/hapus${type.charAt(0).toUpperCase() + type.slice(1)}`, {
+                    // **FIX**: Corrected the API endpoint path
+                    const apiPath = type === 'ppu' ? '/api/hapusPPU' : '/api/hapusRekap';
+                    const response = await fetch(apiPath, {
                         method: 'DELETE',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ username, number })
                     });
                     
-                    // **FIX**: Handle non-JSON error responses from the server
                     if (!response.ok) {
                         const errorText = await response.text();
                         throw new Error(errorText || 'Gagal menghapus data. Status: ' + response.status);
