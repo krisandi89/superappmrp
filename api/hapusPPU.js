@@ -9,15 +9,15 @@ export default async function handler(request, response) {
   }
 
   try {
-    // Ambil username dan ppuNumber dari body request
-    const { username, ppuNumber } = request.body;
+    // Menggunakan 'number' agar konsisten dengan panggilan dari frontend
+    const { username, number } = request.body;
 
-    if (!username || !ppuNumber) {
+    if (!username || !number) {
       return response.status(400).json({ success: false, message: 'Username dan Nomor PPU diperlukan.' });
     }
 
     // Buat kunci yang akan dihapus
-    const key = `${username}-${ppuNumber}`;
+    const key = `${username}-${number}`;
 
     // Hapus data dari Vercel KV
     const result = await kv.del(key);
