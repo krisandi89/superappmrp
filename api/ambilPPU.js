@@ -9,15 +9,15 @@ export default async function handler(request, response) {
   }
 
   try {
-    // Ambil ppuNumber dan username dari query URL
-    const { ppuNumber, username } = request.query;
+    // Menggunakan 'number' agar konsisten dengan panggilan dari frontend
+    const { number, username } = request.query;
 
-    if (!ppuNumber || !username) {
+    if (!number || !username) {
       return response.status(400).json({ success: false, message: 'Nomor PPU dan Username diperlukan.' });
     }
 
     // Buat kunci yang benar untuk mengambil data
-    const key = `${username}-${ppuNumber}`;
+    const key = `${username}-${number}`;
 
     // Ambil data dari Vercel KV berdasarkan kunci
     const data = await kv.get(key);
