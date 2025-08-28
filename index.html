@@ -141,6 +141,21 @@
         </div>
         <p id="ppu-list-loading" class="text-center text-gray-500 py-8">Memuat data...</p>
     </div>
+    
+    <!-- Rekap List Page -->
+    <div id="page-rekap-list" class="page">
+        <header class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold text-gray-800">Daftar Rekap Tersimpan</h1>
+            <button onclick="showMainPage()" class="btn btn-secondary"><i class="fas fa-times mr-2"></i>Tutup</button>
+        </header>
+        <div class="mb-6">
+            <input type="text" id="rekap-list-search" class="form-input" placeholder="Cari berdasarkan Nomor Rekap, Proyek, atau Lokasi...">
+        </div>
+        <div id="rekap-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Rekap items will be injected here -->
+        </div>
+        <p id="rekap-list-loading" class="text-center text-gray-500 py-8">Memuat data...</p>
+    </div>
 
     <!-- Modal for confirmations -->
     <div id="modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 hidden opacity-0 transition-opacity duration-200">
@@ -223,20 +238,29 @@
         function showMainPage() {
             document.getElementById('page-app').classList.add('active');
             document.getElementById('page-ppu-list').classList.remove('active');
+            document.getElementById('page-rekap-list').classList.remove('active');
             document.getElementById('page-login').classList.remove('active');
         }
 
         function showLoginPage() {
             document.getElementById('page-app').classList.remove('active');
             document.getElementById('page-ppu-list').classList.remove('active');
+            document.getElementById('page-rekap-list').classList.remove('active');
             document.getElementById('page-login').classList.add('active');
         }
 
-        function showPpuListPage(opener) {
-            window.ppuListOpener = opener; // Set which app opened the list ('ppu' or 'rekap')
+        function showPpuListPage() {
             document.getElementById('page-app').classList.remove('active');
             document.getElementById('page-ppu-list').classList.add('active');
+            document.getElementById('page-rekap-list').classList.remove('active');
             fetchAllPpuDataForList();
+        }
+        
+        function showRekapListPage() {
+            document.getElementById('page-app').classList.remove('active');
+            document.getElementById('page-ppu-list').classList.remove('active');
+            document.getElementById('page-rekap-list').classList.add('active');
+            fetchAllRekapDataForList();
         }
         
         // --- GLOBAL UTILITIES ---
@@ -279,7 +303,7 @@
             return new Date(year, month - 1, day).toLocaleDateString('id-ID', options);
         };
         const formatDateForInput = (dateString) => {
-            if (!dateString || dateString.length !== 10) return '';
+            if (!dateString || dateString.length < 10) return '';
             const [year, month, day] = dateString.split('-');
             return `${day}/${month}/${year}`;
         };
@@ -359,42 +383,45 @@
             window.location.reload();
         }
 
-        // --- GLOBAL PPU LIST MANAGEMENT ---
+        // --- GLOBAL DATA LIST MANAGEMENT ---
         let allPpuData = [];
-        window.ppuListOpener = null; // Can be 'ppu' or 'rekap'
+        let allRekapData = [];
 
-        async function global_handleDeletePpu(event, ppuNumber) {
+        async function global_handleDelete(event, number, type) {
             event.stopPropagation();
-            showModal('Konfirmasi Hapus', `Anda yakin ingin menghapus PPU "${ppuNumber}"? Tindakan ini tidak dapat dibatalkan.`, 'confirm', async () => {
+            const confirmMessage = `Anda yakin ingin menghapus ${type.toUpperCase()} "${number}"? Tindakan ini tidak dapat dibatalkan.`;
+            showModal('Konfirmasi Hapus', confirmMessage, 'confirm', async () => {
                 const username = localStorage.getItem('loggedInUser');
-                if (!username) {
-                    showNotification('Sesi tidak valid. Silakan login kembali.', 'error');
-                    return;
-                }
+                if (!username) return showNotification('Sesi tidak valid. Silakan login kembali.', 'error');
                 
-                showNotification('Menghapus PPU...', 'info');
+                showNotification(`Menghapus ${type.toUpperCase()}...`, 'info');
                 try {
-                    const response = await fetch('/api/hapusPPU', {
+                    const response = await fetch(`/api/hapus${type.charAt(0).toUpperCase() + type.slice(1)}`, {
                         method: 'DELETE',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ username, ppuNumber })
+                        body: JSON.stringify({ username, number })
                     });
                     const result = await response.json();
                     if (!response.ok) throw new Error(result.message || 'Gagal menghapus data');
                     
-                    showNotification('PPU berhasil dihapus.', 'success');
-                    allPpuData = allPpuData.filter(d => d.projectInfo.ppuNumber !== ppuNumber);
-                    renderPpuList(document.getElementById('ppu-list-search').value);
+                    showNotification(`${type.toUpperCase()} berhasil dihapus.`, 'success');
+                    if (type === 'ppu') {
+                        allPpuData = allPpuData.filter(d => d.projectInfo.ppuNumber !== number);
+                        renderPpuList(document.getElementById('ppu-list-search').value);
+                    } else {
+                        allRekapData = allRekapData.filter(d => d.projectInfo.rekapNumber !== number);
+                        renderRekapList(document.getElementById('rekap-list-search').value);
+                    }
                 } catch (error) {
-                    console.error('Gagal menghapus PPU:', error);
+                    console.error(`Gagal menghapus ${type.toUpperCase()}:`, error);
                     showNotification(error.message, 'error');
                 }
             });
         }
 
         function renderPpuList(filter = '') {
-            const ppuListContainer = document.getElementById('ppu-list-container');
-            ppuListContainer.innerHTML = '';
+            const container = document.getElementById('ppu-list-container');
+            container.innerHTML = '';
             const searchTerm = filter.toUpperCase();
             const filteredData = allPpuData.filter(data => 
                 data.projectInfo.ppuNumber.toUpperCase().includes(searchTerm) ||
@@ -403,7 +430,7 @@
             );
 
             if (filteredData.length === 0) {
-                ppuListContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">Tidak ada data PPU yang cocok.</p>`;
+                container.innerHTML = `<p class="text-center text-gray-500 col-span-full">Tidak ada data PPU yang cocok.</p>`;
                 return;
             }
             
@@ -414,17 +441,11 @@
                 const savedDate = data.savedAt ? new Date(data.savedAt).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : 'N/A';
                 const card = document.createElement('div');
                 card.className = 'card p-4 flex flex-col justify-between relative transition hover:shadow-lg';
-                
                 const encodedData = encodeURIComponent(JSON.stringify(data));
-                let onclickAction = '';
-                if (window.ppuListOpener === 'ppu') {
-                    onclickAction = `window.ppu_loadData(JSON.parse(decodeURIComponent('${encodedData}')))`;
-                } else { // 'rekap'
-                    onclickAction = `window.rekap_selectPpu(JSON.parse(decodeURIComponent('${encodedData}')))`;
-                }
+                const onclickAction = `window.ppu_loadData(JSON.parse(decodeURIComponent('${encodedData}')))`;
 
                 card.innerHTML = `
-                    <button onclick="global_handleDeletePpu(event, '${data.projectInfo.ppuNumber}')" class="absolute top-2 right-2 text-gray-400 hover:text-red-600 transition z-10 p-2 rounded-full hover:bg-red-100" title="Hapus PPU">
+                    <button onclick="global_handleDelete(event, '${data.projectInfo.ppuNumber}', 'ppu')" class="absolute top-2 right-2 text-gray-400 hover:text-red-600 transition z-10 p-2 rounded-full hover:bg-red-100" title="Hapus PPU">
                         <i class="fas fa-trash-alt fa-sm"></i>
                     </button>
                     <div class="cursor-pointer" onclick="${onclickAction}">
@@ -444,16 +465,65 @@
                         </div>
                     </div>
                 `;
-                ppuListContainer.appendChild(card);
+                container.appendChild(card);
+            });
+        }
+        
+        function renderRekapList(filter = '') {
+            const container = document.getElementById('rekap-list-container');
+            container.innerHTML = '';
+            const searchTerm = filter.toUpperCase();
+            const filteredData = allRekapData.filter(data => 
+                data.projectInfo.rekapNumber.toUpperCase().includes(searchTerm) ||
+                (data.projectInfo.name && data.projectInfo.name.toUpperCase().includes(searchTerm)) ||
+                (data.projectInfo.location && data.projectInfo.location.toUpperCase().includes(searchTerm))
+            );
+
+            if (filteredData.length === 0) {
+                container.innerHTML = `<p class="text-center text-gray-500 col-span-full">Tidak ada data Rekap yang cocok.</p>`;
+                return;
+            }
+            
+            filteredData.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+
+            filteredData.forEach(data => {
+                const balance = data.budget.amount - data.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                const savedDate = data.savedAt ? new Date(data.savedAt).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : 'N/A';
+                const card = document.createElement('div');
+                card.className = 'card p-4 flex flex-col justify-between relative transition hover:shadow-lg';
+                const encodedData = encodeURIComponent(JSON.stringify(data));
+                const onclickAction = `window.rekap_loadData(JSON.parse(decodeURIComponent('${encodedData}')))`;
+
+                card.innerHTML = `
+                    <button onclick="global_handleDelete(event, '${data.projectInfo.rekapNumber}', 'rekap')" class="absolute top-2 right-2 text-gray-400 hover:text-red-600 transition z-10 p-2 rounded-full hover:bg-red-100" title="Hapus Rekap">
+                        <i class="fas fa-trash-alt fa-sm"></i>
+                    </button>
+                    <div class="cursor-pointer" onclick="${onclickAction}">
+                        <div class="pr-8">
+                            <p class="font-bold text-gray-800">${data.projectInfo.rekapNumber}</p>
+                            <p class="text-sm text-gray-600 truncate">${data.projectInfo.name || 'Tanpa Nama Proyek'}</p>
+                            <p class="text-xs text-gray-400"><i class="fas fa-map-marker-alt mr-1"></i>${data.projectInfo.location || 'Tanpa Lokasi'}</p>
+                        </div>
+                        <div class="mt-4 pt-2 border-t">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="text-xs text-gray-500">Sisa Budget</p>
+                                    <p class="font-semibold ${balance < 0 ? 'text-red-600' : 'text-green-600'}">${formatToCurrency(balance)}</p>
+                                </div>
+                                <p class="text-xs text-gray-400">${savedDate}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
             });
         }
 
         async function fetchAllPpuDataForList() {
-            const ppuListLoading = document.getElementById('ppu-list-loading');
-            const ppuListContainer = document.getElementById('ppu-list-container');
-            ppuListLoading.textContent = 'Memuat data...';
-            ppuListLoading.style.display = 'block';
-            ppuListContainer.innerHTML = '';
+            const loadingEl = document.getElementById('ppu-list-loading');
+            const container = document.getElementById('ppu-list-container');
+            loadingEl.style.display = 'block';
+            container.innerHTML = '';
             const username = localStorage.getItem('loggedInUser');
             if(!username) return;
 
@@ -461,20 +531,49 @@
                 const response = await fetch(`/api/ambilSemuaNomorPPU?username=${username}`);
                 const result = await response.json();
                 if(result.success && result.keys.length > 0) {
-                    const ppuDetailsPromises = result.keys.map(key => 
-                        fetch(`/api/ambilPPU?ppuNumber=${key.replace(username + '-', '')}&username=${username}`).then(res => res.json())
+                    const promises = result.keys.map(key => 
+                        fetch(`/api/ambilPPU?number=${key.replace(username + '-', '')}&username=${username}`).then(res => res.json())
                     );
-                    const allResults = await Promise.all(ppuDetailsPromises);
+                    const allResults = await Promise.all(promises);
                     allPpuData = allResults.map(res => res.data).filter(Boolean);
                     renderPpuList();
                 } else {
-                    ppuListContainer.innerHTML = `<p class="text-center text-gray-500 col-span-full">Belum ada data PPU yang tersimpan.</p>`;
+                    container.innerHTML = `<p class="text-center text-gray-500 col-span-full">Belum ada data PPU yang tersimpan.</p>`;
                 }
             } catch (error) {
                 console.error("Gagal mengambil daftar PPU:", error);
-                ppuListContainer.innerHTML = `<p class="text-center text-red-500 col-span-full">Gagal memuat data. Coba lagi nanti.</p>`;
+                container.innerHTML = `<p class="text-center text-red-500 col-span-full">Gagal memuat data. Coba lagi nanti.</p>`;
             } finally {
-                ppuListLoading.style.display = 'none';
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        async function fetchAllRekapDataForList() {
+            const loadingEl = document.getElementById('rekap-list-loading');
+            const container = document.getElementById('rekap-list-container');
+            loadingEl.style.display = 'block';
+            container.innerHTML = '';
+            const username = localStorage.getItem('loggedInUser');
+            if(!username) return;
+
+            try {
+                const response = await fetch(`/api/ambilSemuaNomorRekap?username=${username}`);
+                const result = await response.json();
+                if(result.success && result.keys.length > 0) {
+                    const promises = result.keys.map(key => 
+                        fetch(`/api/ambilRekap?number=${key.replace(username + '-', '')}&username=${username}`).then(res => res.json())
+                    );
+                    const allResults = await Promise.all(promises);
+                    allRekapData = allResults.map(res => res.data).filter(Boolean);
+                    renderRekapList();
+                } else {
+                    container.innerHTML = `<p class="text-center text-gray-500 col-span-full">Belum ada data Rekap yang tersimpan.</p>`;
+                }
+            } catch (error) {
+                console.error("Gagal mengambil daftar Rekap:", error);
+                container.innerHTML = `<p class="text-center text-red-500 col-span-full">Gagal memuat data. Coba lagi nanti.</p>`;
+            } finally {
+                loadingEl.style.display = 'none';
             }
         }
         
@@ -492,7 +591,7 @@
             showMainPage();
 
             document.getElementById('pane-ppu').innerHTML = `<div class="max-w-5xl mx-auto"><header class="text-center mb-8"><h1 class="text-3xl font-bold text-gray-800">Aplikasi Pengajuan Pengeluaran Uang (PPU)</h1><p class="text-gray-500 mt-1">Buat atau muat proposal pengeluaran Anda.</p></header><div class="card p-6 mb-6"><div class="flex flex-col md:flex-row items-center justify-center gap-4"><h2 class="text-xl font-semibold text-gray-700">Mulai PPU Baru</h2><span class="text-gray-400">atau</span><button id="ppu-open-ppu-list-btn" class="btn btn-primary w-full md:w-auto"><i class="fas fa-search mr-2"></i>Cari & Muat PPU Tersimpan</button></div></div><div class="card p-6 mb-6"><h2 class="text-xl font-semibold text-gray-700 mb-4">Informasi Proyek</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="ppu-project-name" class="block text-sm font-medium text-gray-600 mb-1">Proyek</label><textarea id="ppu-project-name" class="form-textarea" rows="2"></textarea></div><div><label for="ppu-project-location" class="block text-sm font-medium text-gray-600 mb-1">Lokasi</label><textarea id="ppu-project-location" class="form-textarea" rows="2"></textarea></div><div><label for="ppu-project-activity" class="block text-sm font-medium text-gray-600 mb-1">Kegiatan/Sub-Judul Laporan</label><textarea id="ppu-project-activity" class="form-textarea" rows="2"></textarea></div><div><label for="ppu-project-personnel" class="block text-sm font-medium text-gray-600 mb-1">Nama Personil</label><textarea id="ppu-project-personnel" class="form-textarea" rows="2"></textarea></div><div><label for="ppu-project-applicant" class="block text-sm font-medium text-gray-600 mb-1">Nama Pemohon</label><textarea id="ppu-project-applicant" class="form-textarea" rows="2"></textarea></div><div><label for="ppu-project-applicant-location" class="block text-sm font-medium text-gray-600 mb-1">Lokasi Pemohon</label><textarea id="ppu-project-applicant-location" class="form-textarea" rows="2" placeholder="Contoh: Jakarta"></textarea></div><div><label for="ppu-project-date" class="block text-sm font-medium text-gray-600 mb-1">Tanggal pengeluaran uang</label><input type="text" id="ppu-project-date" class="form-input" placeholder="dd/mm/yyyy"></div><div><label for="ppu-proposal-date" class="block text-sm font-medium text-gray-600 mb-1">Tanggal Pengajuan</label><input type="text" id="ppu-proposal-date" class="form-input" placeholder="dd/mm/yyyy"></div><div class="md:col-span-2"><label for="ppu-number-manual" class="block text-sm font-medium text-gray-600 mb-1">Nomor PPU</label><div class="flex items-center"><span class="bg-gray-200 p-2 rounded-l-lg border border-r-0 border-gray-300 text-gray-600">PPU-</span><input type="text" id="ppu-number-manual" class="form-input rounded-l-none" placeholder="Contoh: 01-WTP"></div></div></div></div><div class="grid grid-cols-1 gap-6 mb-8"><div class="card p-5 flex items-center justify-center"><div class="bg-indigo-100 text-indigo-600 p-4 rounded-full mr-4"><i class="fas fa-file-invoice-dollar fa-2x"></i></div><div class="text-center"><p class="text-gray-500 text-sm">Total Pengajuan</p><h3 id="ppu-summary-total-proposal" class="text-3xl font-bold text-gray-800">Rp 0</h3></div></div></div><div class="card p-6 mb-8"><h2 id="ppu-form-title" class="text-xl font-semibold text-gray-700 mb-4">Tambah Rincian Pengajuan</h2><form id="ppu-expense-form"><input type="hidden" id="ppu-expense-id"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end"><div><label for="ppu-expense-category" class="block text-sm font-medium text-gray-600 mb-1">1. Pilih Kategori</label><select id="ppu-expense-category" class="form-input" required><option value="">-- Pilih --</option><option value="Uang Supervisi">Uang Supervisi</option><option value="Transportasi">Transportasi</option><option value="Konsumsi">Konsumsi</option><option value="Akomodasi">Akomodasi</option><option value="Komunikasi">Komunikasi</option><option value="Lainnya">Lainnya</option></select></div></div><div id="ppu-standard-inputs" class="hidden mt-4 grid grid-cols-1 lg:grid-cols-3 gap-4 items-end"><div class="lg:col-span-2"><label for="ppu-standard-description" id="ppu-standard-description-label" class="block text-sm font-medium text-gray-600 mb-1">2. Keterangan</label><input type="text" id="ppu-standard-description" class="form-input"></div><div><label for="ppu-standard-amount" class="block text-sm font-medium text-gray-600 mb-1">3. Jumlah</label><input type="text" id="ppu-standard-amount" inputmode="numeric" class="form-input" placeholder="Rp 0"></div></div><div id="ppu-supervisi-inputs" class="hidden mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start"><div class="md:col-span-2 lg:col-span-1"><label for="ppu-supervisi-name" class="block text-sm font-medium text-gray-600 mb-1">2. Nama Supervisi</label><input type="text" id="ppu-supervisi-name" class="form-input"></div><div class="md:col-span-2 lg:col-span-3"><label class="block text-sm font-medium text-gray-600 mb-1">3. Pilih Periode</label><div class="flex items-center space-x-2"><input type="text" id="ppu-supervisi-start-date" class="form-input" placeholder="dd/mm/yyyy"><span class="text-gray-500">s/d</span><input type="text" id="ppu-supervisi-end-date" class="form-input" placeholder="dd/mm/yyyy"></div></div><div class="md:col-span-1"><label for="ppu-supervisi-rate-work" class="block text-sm font-medium text-gray-600 mb-1">4. Nom. Hari Kerja</label><input type="text" id="ppu-supervisi-rate-work" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div class="md:col-span-1"><label for="ppu-supervisi-rate-holiday" class="block text-sm font-medium text-gray-600 mb-1">5. Nom. Hari Libur</label><input type="text" id="ppu-supervisi-rate-holiday" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div class="md:col-span-1"><label class="block text-sm font-medium text-gray-600 mb-1">Jml Hari</label><div class="flex items-center space-x-2"><input type="text" id="ppu-supervisi-day-count-work" class="form-input bg-gray-100" readonly placeholder="Kerja"><input type="text" id="ppu-supervisi-day-count-holiday" class="form-input bg-gray-100" readonly placeholder="Libur"></div></div><div class="md:col-span-1"><label for="ppu-supervisi-description" class="block text-sm font-medium text-gray-600 mb-1">6. Ket. Tambahan</label><input type="text" id="ppu-supervisi-description" class="form-input" placeholder="(Opsional)"></div><div class="md:col-span-4"><label for="ppu-supervisi-total-amount" class="block text-sm font-medium text-gray-600 mb-1">Total Biaya Supervisi</label><input type="text" id="ppu-supervisi-total-amount" class="form-input bg-gray-100 font-bold" readonly></div></div><div class="flex justify-end space-x-2 mt-6"><button type="submit" id="ppu-add-expense-btn" class="btn btn-primary"><i class="fas fa-plus mr-2"></i>Tambah</button><button type="button" id="ppu-cancel-edit-btn" class="btn btn-secondary hidden"><i class="fas fa-times mr-2"></i>Batal</button></div></form></div><div class="card p-6"><div class="flex flex-wrap justify-between items-center gap-4"><h2 class="text-xl font-semibold text-gray-700">Rincian Pengajuan</h2><div class="flex gap-2"><button id="ppu-reset-btn" class="btn btn-secondary"><i class="fas fa-file mr-2"></i>Buat Baru</button><button id="ppu-preview-proposal-btn" class="btn btn-secondary"><i class="fas fa-eye mr-2"></i>Preview</button><button id="ppu-save-btn" class="btn btn-primary"><i class="fas fa-save mr-2"></i>Simpan</button></div></div><div class="overflow-x-auto mt-4"><table class="w-full text-left"><thead class="bg-gray-50"><tr><th class="p-3 text-sm font-semibold text-gray-600">Tanggal/Periode</th><th class="p-3 text-sm font-semibold text-gray-600">Keterangan</th><th class="p-3 text-sm font-medium text-gray-600">Kategori</th><th class="p-3 text-sm font-semibold text-gray-600 text-right">Jumlah</th><th class="p-3 text-sm font-semibold text-gray-600 text-center">Aksi</th></tr></thead><tbody id="ppu-expense-table-body"></tbody></table><p id="ppu-no-data-message" class="text-center text-gray-500 py-8">Belum ada rincian pengajuan.</p></div></div></div>`;
-            document.getElementById('pane-rekap').innerHTML = `<div class="max-w-5xl mx-auto"><header class="text-center mb-8"><h1 class="text-3xl font-bold text-gray-800">Aplikasi Rekapitulasi Pengeluaran</h1><p class="text-gray-500 mt-1">Catat dan kelola pengeluaran Anda dengan cerdas.</p></header><div class="card p-6 mb-6"><h2 class="text-xl font-semibold text-gray-700 mb-4">Tarik Data dari PPU</h2><div class="flex justify-center"><button id="rekap-open-ppu-list-btn" class="btn btn-primary w-full md:w-auto"><i class="fas fa-search mr-2"></i>Cari & Pilih PPU</button></div></div><div class="card p-6 mb-6"><h2 class="text-xl font-semibold text-gray-700 mb-4">Informasi Proyek</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="rekap-project-name" class="block text-sm font-medium text-gray-600 mb-1">Proyek</label><textarea id="rekap-project-name" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-location" class="block text-sm font-medium text-gray-600 mb-1">Lokasi</label><textarea id="rekap-project-location" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-activity" class="block text-sm font-medium text-gray-600 mb-1">Kegiatan/Sub-Judul Laporan</label><textarea id="rekap-project-activity" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-personnel" class="block text-sm font-medium text-gray-600 mb-1">Nama Personil</label><textarea id="rekap-project-personnel" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-applicant" class="block text-sm font-medium text-gray-600 mb-1">Nama Pemohon</label><textarea id="rekap-project-applicant" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-applicant-location" class="block text-sm font-medium text-gray-600 mb-1">Lokasi Pemohon</label><textarea id="rekap-project-applicant-location" class="form-textarea" rows="2" placeholder="Contoh: Jakarta"></textarea></div></div></div><div class="card p-6 mb-6"><h2 class="text-xl font-semibold text-gray-700 mb-4">Sumber Dana</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div><label for="rekap-initial-budget" class="block text-sm font-medium text-gray-600 mb-1">Total Uang Diterima</label><input type="text" id="rekap-initial-budget" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div><label for="rekap-budget-date" class="block text-sm font-medium text-gray-600 mb-1">Tanggal Diterima</label><input type="text" id="rekap-budget-date" class="form-input" placeholder="dd/mm/yyyy"></div><div class="md:self-end"><button id="rekap-set-budget-btn" class="btn btn-primary w-full"><i class="fas fa-save mr-2"></i>Atur Budget</button></div></div></div><div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"><div class="card p-5 flex items-center"><div class="bg-blue-100 text-blue-600 p-4 rounded-full mr-4"><i class="fas fa-wallet fa-2x"></i></div><div><p class="text-gray-500 text-sm">Total Budget</p><h3 id="rekap-summary-budget" class="text-2xl font-bold text-gray-800">Rp 0</h3></div></div><div class="card p-5 flex items-center"><div class="bg-red-100 text-red-600 p-4 rounded-full mr-4"><i class="fas fa-arrow-down-wide-short fa-2x"></i></div><div><p class="text-gray-500 text-sm">Total Pengeluaran</p><h3 id="rekap-summary-expenses" class="text-2xl font-bold text-gray-800">Rp 0</h3></div></div><div class="card p-5 flex items-center"><div class="bg-green-100 text-green-600 p-4 rounded-full mr-4"><i class="fas fa-coins fa-2x"></i></div><div><p class="text-gray-500 text-sm">Sisa Budget</p><h3 id="rekap-summary-balance" class="text-2xl font-bold text-gray-800">Rp 0</h3></div></div></div><div class="card p-6 mb-8"><h2 id="rekap-form-title" class="text-xl font-semibold text-gray-700 mb-4">Tambah Pengeluaran Baru</h2><form id="rekap-expense-form"><input type="hidden" id="rekap-expense-id"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end"><div><label for="rekap-expense-category" class="block text-sm font-medium text-gray-600 mb-1">1. Pilih Kategori</label><select id="rekap-expense-category" class="form-input" required><option value="">-- Pilih --</option><option value="Uang Supervisi">Uang Supervisi</option><option value="Transportasi">Transportasi</option><option value="Konsumsi">Konsumsi</option><option value="Akomodasi">Akomodasi</option><option value="Komunikasi">Komunikasi</option><option value="Lainnya">Lainnya</option></select></div></div><div id="rekap-standard-inputs" class="hidden mt-4 grid grid-cols-1 lg:grid-cols-4 gap-4 items-end"><div><label for="rekap-standard-date" class="block text-sm font-medium text-gray-600 mb-1">2. Tanggal</label><input type="text" id="rekap-standard-date" class="form-input" placeholder="dd/mm/yyyy"></div><div class="lg:col-span-2"><label for="rekap-standard-description" id="rekap-standard-description-label" class="block text-sm font-medium text-gray-600 mb-1">3. Keterangan</label><input type="text" id="rekap-standard-description" class="form-input"></div><div><label for="rekap-standard-amount" class="block text-sm font-medium text-gray-600 mb-1">4. Jumlah</label><input type="text" id="rekap-standard-amount" inputmode="numeric" class="form-input" placeholder="Rp 0"></div></div><div id="rekap-supervisi-inputs" class="hidden mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start"><div class="md:col-span-2 lg:col-span-1"><label for="rekap-supervisi-name" class="block text-sm font-medium text-gray-600 mb-1">2. Nama Supervisi</label><input type="text" id="rekap-supervisi-name" class="form-input"></div><div class="md:col-span-2 lg:col-span-3"><label class="block text-sm font-medium text-gray-600 mb-1">3. Pilih Periode</label><div class="flex items-center space-x-2"><input type="text" id="rekap-supervisi-start-date" class="form-input" placeholder="dd/mm/yyyy"><span class="text-gray-500">s/d</span><input type="text" id="rekap-supervisi-end-date" class="form-input" placeholder="dd/mm/yyyy"></div></div><div class="md:col-span-1"><label for="rekap-supervisi-rate-work" class="block text-sm font-medium text-gray-600 mb-1">4. Nom. Hari Kerja</label><input type="text" id="rekap-supervisi-rate-work" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div class="md:col-span-1"><label for="rekap-supervisi-rate-holiday" class="block text-sm font-medium text-gray-600 mb-1">5. Nom. Hari Libur</label><input type="text" id="rekap-supervisi-rate-holiday" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div class="md:col-span-1"><label class="block text-sm font-medium text-gray-600 mb-1">Jml Hari</label><div class="flex items-center space-x-2"><input type="text" id="rekap-supervisi-day-count-work" class="form-input bg-gray-100" readonly placeholder="Kerja"><input type="text" id="rekap-supervisi-day-count-holiday" class="form-input bg-gray-100" readonly placeholder="Libur"></div></div><div class="md:col-span-1"><label for="rekap-supervisi-description" class="block text-sm font-medium text-gray-600 mb-1">6. Ket. Tambahan</label><input type="text" id="rekap-supervisi-description" class="form-input" placeholder="(Opsional)"></div><div class="md:col-span-4"><label for="rekap-supervisi-total-amount" class="block text-sm font-medium text-gray-600 mb-1">Total Biaya Supervisi</label><input type="text" id="rekap-supervisi-total-amount" class="form-input bg-gray-100 font-bold" readonly></div></div><div class="flex justify-end space-x-2 mt-6"><button type="submit" id="rekap-add-expense-btn" class="btn btn-primary"><i class="fas fa-plus mr-2"></i>Tambah</button><button type="button" id="rekap-cancel-edit-btn" class="btn btn-secondary hidden"><i class="fas fa-times mr-2"></i>Batal</button></div></form></div><div class="card p-6"><div class="flex flex-wrap justify-between items-center gap-4"><h2 class="text-xl font-semibold text-gray-700">Laporan & Riwayat</h2><div class="flex gap-2"><button id="rekap-preview-report-btn" class="btn btn-secondary"><i class="fas fa-eye mr-2"></i>Preview</button><button id="rekap-save-btn" class="btn btn-primary" disabled><i class="fas fa-save mr-2"></i>Simpan</button></div></div><div class="overflow-x-auto mt-4"><table class="w-full text-left"><thead class="bg-gray-50"><tr><th class="p-3 text-sm font-semibold text-gray-600">Tanggal/Periode</th><th class="p-3 text-sm font-semibold text-gray-600">Keterangan</th><th class="p-3 text-sm font-semibold text-gray-600">Kategori</th><th class="p-3 text-sm font-semibold text-gray-600 text-right">Jumlah</th><th class="p-3 text-sm font-semibold text-gray-600 text-center">Aksi</th></tr></thead><tbody id="rekap-expense-table-body"></tbody></table><p id="rekap-no-data-message" class="text-center text-gray-500 py-8">Belum ada data pengeluaran.</p></div></div></div>`;
+            document.getElementById('pane-rekap').innerHTML = `<div class="max-w-5xl mx-auto"><header class="text-center mb-8"><h1 class="text-3xl font-bold text-gray-800">Aplikasi Rekapitulasi Pengeluaran</h1><p class="text-gray-500 mt-1">Catat dan kelola pengeluaran Anda dengan cerdas.</p></header><div class="card p-6 mb-6"><h2 class="text-xl font-semibold text-gray-700 mb-4">Mulai Rekapitulasi</h2><div class="flex flex-col md:flex-row items-center justify-center gap-4"><button id="rekap-open-ppu-list-btn" class="btn btn-secondary w-full md:w-auto"><i class="fas fa-file-import mr-2"></i>Tarik Data dari PPU</button><span class="text-gray-400">atau</span><button id="rekap-open-rekap-list-btn" class="btn btn-primary w-full md:w-auto"><i class="fas fa-search mr-2"></i>Cari Rekap Tersimpan</button></div></div><div class="card p-6 mb-6"><h2 class="text-xl font-semibold text-gray-700 mb-4">Informasi Proyek</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-4"><div><label for="rekap-project-name" class="block text-sm font-medium text-gray-600 mb-1">Proyek</label><textarea id="rekap-project-name" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-location" class="block text-sm font-medium text-gray-600 mb-1">Lokasi</label><textarea id="rekap-project-location" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-activity" class="block text-sm font-medium text-gray-600 mb-1">Kegiatan/Sub-Judul Laporan</label><textarea id="rekap-project-activity" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-personnel" class="block text-sm font-medium text-gray-600 mb-1">Nama Personil</label><textarea id="rekap-project-personnel" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-applicant" class="block text-sm font-medium text-gray-600 mb-1">Nama Pemohon</label><textarea id="rekap-project-applicant" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-applicant-location" class="block text-sm font-medium text-gray-600 mb-1">Lokasi Pemohon</label><textarea id="rekap-project-applicant-location" class="form-textarea" rows="2" placeholder="Contoh: Jakarta"></textarea></div><div class="md:col-span-2"><label for="rekap-number-manual" class="block text-sm font-medium text-gray-600 mb-1">Nomor Rekap</label><div class="flex items-center"><span class="bg-gray-200 p-2 rounded-l-lg border border-r-0 border-gray-300 text-gray-600">REKAP-</span><input type="text" id="rekap-number-manual" class="form-input rounded-l-none" placeholder="Contoh: 01-WTP-FIN"></div></div></div></div><div class="card p-6 mb-6"><h2 class="text-xl font-semibold text-gray-700 mb-4">Sumber Dana</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div><label for="rekap-initial-budget" class="block text-sm font-medium text-gray-600 mb-1">Total Uang Diterima</label><input type="text" id="rekap-initial-budget" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div><label for="rekap-budget-date" class="block text-sm font-medium text-gray-600 mb-1">Tanggal Diterima</label><input type="text" id="rekap-budget-date" class="form-input" placeholder="dd/mm/yyyy"></div><div class="md:self-end"><button id="rekap-set-budget-btn" class="btn btn-primary w-full"><i class="fas fa-save mr-2"></i>Atur Budget</button></div></div></div><div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"><div class="card p-5 flex items-center"><div class="bg-blue-100 text-blue-600 p-4 rounded-full mr-4"><i class="fas fa-wallet fa-2x"></i></div><div><p class="text-gray-500 text-sm">Total Budget</p><h3 id="rekap-summary-budget" class="text-2xl font-bold text-gray-800">Rp 0</h3></div></div><div class="card p-5 flex items-center"><div class="bg-red-100 text-red-600 p-4 rounded-full mr-4"><i class="fas fa-arrow-down-wide-short fa-2x"></i></div><div><p class="text-gray-500 text-sm">Total Pengeluaran</p><h3 id="rekap-summary-expenses" class="text-2xl font-bold text-gray-800">Rp 0</h3></div></div><div class="card p-5 flex items-center"><div class="bg-green-100 text-green-600 p-4 rounded-full mr-4"><i class="fas fa-coins fa-2x"></i></div><div><p class="text-gray-500 text-sm">Sisa Budget</p><h3 id="rekap-summary-balance" class="text-2xl font-bold text-gray-800">Rp 0</h3></div></div></div><div class="card p-6 mb-8"><h2 id="rekap-form-title" class="text-xl font-semibold text-gray-700 mb-4">Tambah Pengeluaran Baru</h2><form id="rekap-expense-form"><input type="hidden" id="rekap-expense-id"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end"><div><label for="rekap-expense-category" class="block text-sm font-medium text-gray-600 mb-1">1. Pilih Kategori</label><select id="rekap-expense-category" class="form-input" required><option value="">-- Pilih --</option><option value="Uang Supervisi">Uang Supervisi</option><option value="Transportasi">Transportasi</option><option value="Konsumsi">Konsumsi</option><option value="Akomodasi">Akomodasi</option><option value="Komunikasi">Komunikasi</option><option value="Lainnya">Lainnya</option></select></div></div><div id="rekap-standard-inputs" class="hidden mt-4 grid grid-cols-1 lg:grid-cols-4 gap-4 items-end"><div><label for="rekap-standard-date" class="block text-sm font-medium text-gray-600 mb-1">2. Tanggal</label><input type="text" id="rekap-standard-date" class="form-input" placeholder="dd/mm/yyyy"></div><div class="lg:col-span-2"><label for="rekap-standard-description" id="rekap-standard-description-label" class="block text-sm font-medium text-gray-600 mb-1">3. Keterangan</label><input type="text" id="rekap-standard-description" class="form-input"></div><div><label for="rekap-standard-amount" class="block text-sm font-medium text-gray-600 mb-1">4. Jumlah</label><input type="text" id="rekap-standard-amount" inputmode="numeric" class="form-input" placeholder="Rp 0"></div></div><div id="rekap-supervisi-inputs" class="hidden mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start"><div class="md:col-span-2 lg:col-span-1"><label for="rekap-supervisi-name" class="block text-sm font-medium text-gray-600 mb-1">2. Nama Supervisi</label><input type="text" id="rekap-supervisi-name" class="form-input"></div><div class="md:col-span-2 lg:col-span-3"><label class="block text-sm font-medium text-gray-600 mb-1">3. Pilih Periode</label><div class="flex items-center space-x-2"><input type="text" id="rekap-supervisi-start-date" class="form-input" placeholder="dd/mm/yyyy"><span class="text-gray-500">s/d</span><input type="text" id="rekap-supervisi-end-date" class="form-input" placeholder="dd/mm/yyyy"></div></div><div class="md:col-span-1"><label for="rekap-supervisi-rate-work" class="block text-sm font-medium text-gray-600 mb-1">4. Nom. Hari Kerja</label><input type="text" id="rekap-supervisi-rate-work" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div class="md:col-span-1"><label for="rekap-supervisi-rate-holiday" class="block text-sm font-medium text-gray-600 mb-1">5. Nom. Hari Libur</label><input type="text" id="rekap-supervisi-rate-holiday" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div class="md:col-span-1"><label class="block text-sm font-medium text-gray-600 mb-1">Jml Hari</label><div class="flex items-center space-x-2"><input type="text" id="rekap-supervisi-day-count-work" class="form-input bg-gray-100" readonly placeholder="Kerja"><input type="text" id="rekap-supervisi-day-count-holiday" class="form-input bg-gray-100" readonly placeholder="Libur"></div></div><div class="md:col-span-1"><label for="rekap-supervisi-description" class="block text-sm font-medium text-gray-600 mb-1">6. Ket. Tambahan</label><input type="text" id="rekap-supervisi-description" class="form-input" placeholder="(Opsional)"></div><div class="md:col-span-4"><label for="rekap-supervisi-total-amount" class="block text-sm font-medium text-gray-600 mb-1">Total Biaya Supervisi</label><input type="text" id="rekap-supervisi-total-amount" class="form-input bg-gray-100 font-bold" readonly></div></div><div class="flex justify-end space-x-2 mt-6"><button type="submit" id="rekap-add-expense-btn" class="btn btn-primary"><i class="fas fa-plus mr-2"></i>Tambah</button><button type="button" id="rekap-cancel-edit-btn" class="btn btn-secondary hidden"><i class="fas fa-times mr-2"></i>Batal</button></div></form></div><div class="card p-6"><div class="flex flex-wrap justify-between items-center gap-4"><h2 class="text-xl font-semibold text-gray-700">Laporan & Riwayat</h2><div class="flex gap-2"><button id="rekap-reset-btn" class="btn btn-secondary"><i class="fas fa-file mr-2"></i>Buat Baru</button><button id="rekap-preview-report-btn" class="btn btn-secondary"><i class="fas fa-eye mr-2"></i>Preview</button><button id="rekap-save-btn" class="btn btn-primary"><i class="fas fa-save mr-2"></i>Simpan</button></div></div><div class="overflow-x-auto mt-4"><table class="w-full text-left"><thead class="bg-gray-50"><tr><th class="p-3 text-sm font-semibold text-gray-600">Tanggal/Periode</th><th class="p-3 text-sm font-semibold text-gray-600">Keterangan</th><th class="p-3 text-sm font-semibold text-gray-600">Kategori</th><th class="p-3 text-sm font-semibold text-gray-600 text-right">Jumlah</th><th class="p-3 text-sm font-semibold text-gray-600 text-center">Aksi</th></tr></thead><tbody id="rekap-expense-table-body"></tbody></table><p id="rekap-no-data-message" class="text-center text-gray-500 py-8">Belum ada data pengeluaran.</p></div></div></div>`;
             document.getElementById('pane-laporan').innerHTML = `<div class="max-w-5xl mx-auto"><div class="text-center mb-10"><h1 class="text-3xl font-extrabold text-gray-800 mb-2">Aplikasi Laporan Harian Proyek</h1><p class="text-gray-500 text-lg">Isi form di bawah ini untuk membuat laporan harian.</p></div><div class="card p-6 md:p-8 mb-6"><h2 class="text-2xl font-bold text-gray-700 mb-6 border-b-2 pb-3">Informasi Proyek</h2><div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6"><div><label for="laporan-reportDate" class="block text-sm font-medium text-gray-700 mb-1">Tanggal Laporan:</label><input type="text" id="laporan-reportDate" class="form-input" placeholder="Pilih Tanggal"></div><div><label for="laporan-projectId" class="block text-sm font-medium text-gray-700 mb-1">Nama Proyek:</label><input type="text" id="laporan-projectId" class="form-input" placeholder="Contoh: Proyek Pembangunan Gedung A"></div><div><label for="laporan-projectLocation" class="block text-sm font-medium text-gray-700 mb-1">Lokasi Proyek:</label><input type="text" id="laporan-projectLocation" class="form-input" placeholder="Contoh: Jakarta Selatan"></div><div><label for="laporan-weather" class="block text-sm font-medium text-gray-700 mb-1">Cuaca:</label><select id="laporan-weather" class="form-input"><option value="Cerah">Cerah</option><option value="Mendung">Mendung</option><option value="Hujan Ringan">Hujan Ringan</option><option value="Hujan Lebat">Hujan Lebat</option><option value="Berawan">Berawan</option></select></div><div><label for="laporan-reporterName" class="block text-sm font-medium text-gray-700 mb-1">Nama Pelapor:</label><input type="text" id="laporan-reporterName" class="form-input" placeholder="Contoh: Budi Santoso"></div><div><label for="laporan-reporterPosition" class="block text-sm font-medium text-gray-700 mb-1">Jabatan Pelapor:</label><input type="text" id="laporan-reporterPosition" class="form-input" placeholder="Contoh: Site Engineer"></div><div><label for="laporan-approverName" class="block text-sm font-medium text-gray-700 mb-1">Diketahui Oleh:</label><input type="text" id="laporan-approverName" class="form-input" placeholder="Contoh: Rahmat Hidayat"></div><div><label for="laporan-approverPosition" class="block text-sm font-medium text-gray-700 mb-1">Jabatan (Diketahui Oleh):</label><input type="text" id="laporan-approverPosition" class="form-input" placeholder="Contoh: Project Manager"></div></div></div><div class="card p-6 md:p-8 mb-6"><h2 class="text-2xl font-bold text-gray-700 mb-6 border-b-2 pb-3">Detail Kegiatan</h2><div class="space-y-6"><div><label for="laporan-mainActivities" class="block text-sm font-medium text-gray-700 mb-1">Kegiatan Utama Hari Ini:</label><textarea id="laporan-mainActivities" rows="5" class="form-textarea" placeholder="Masukkan poin-poin kegiatan harian"></textarea></div><div><label for="laporan-issuesConstraints" class="block text-sm font-medium text-gray-700 mb-1">Masalah/Kendala di Lapangan:</label><textarea id="laporan-issuesConstraints" rows="4" class="form-textarea" placeholder="Masukkan kendala atau masalah yang dihadapi"></textarea></div><div><label for="laporan-nextDayPlan" class="block text-sm font-medium text-gray-700 mb-1">Rencana Kerja Esok Hari:</label><textarea id="laporan-nextDayPlan" rows="4" class="form-textarea" placeholder="Masukkan rencana kerja untuk besok"></textarea></div></div></div><div class="card p-6 md:p-8 mb-6"><h2 class="text-2xl font-bold text-gray-700 mb-6 border-b-2 pb-3">Dokumentasi Foto (Maks. 3)</h2><div id="laporan-photoUploadArea" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div></div><div class="flex justify-center mt-8 gap-4"><button onclick="laporan_openPreview()" class="btn btn-secondary"><i class="fas fa-eye mr-2"></i> Preview</button><button id="laporan-save-btn" class="btn btn-primary" disabled><i class="fas fa-save mr-2"></i> Simpan</button></div></div>`;
             
             await fetchHolidays();
@@ -500,6 +599,7 @@
             initRekapApp();
             initLaporanApp();
             document.getElementById('ppu-list-search').addEventListener('input', (e) => renderPpuList(e.target.value));
+            document.getElementById('rekap-list-search').addEventListener('input', (e) => renderRekapList(e.target.value));
         }
 
         document.addEventListener('DOMContentLoaded', initializeApp);
@@ -680,7 +780,7 @@
             };
 
             DOMElements.saveBtn.addEventListener('click', saveDataToVercel);
-            DOMElements.openPpuListBtn.addEventListener('click', () => showPpuListPage('ppu'));
+            DOMElements.openPpuListBtn.addEventListener('click', () => showPpuListPage());
             DOMElements.resetBtn.addEventListener('click', resetAll);
 
             Object.keys(DOMElements.projectInfoFields).forEach(key => {
@@ -825,8 +925,10 @@
             const prefix = 'rekap-';
             const DOMElements = {
                 openPpuListBtn: document.getElementById(`${prefix}open-ppu-list-btn`),
+                openRekapListBtn: document.getElementById(`${prefix}open-rekap-list-btn`),
+                resetBtn: document.getElementById(`${prefix}reset-btn`),
                 saveBtn: document.getElementById(`${prefix}save-btn`),
-                projectInfoFields: { name: document.getElementById(`${prefix}project-name`), location: document.getElementById(`${prefix}project-location`), personnel: document.getElementById(`${prefix}project-personnel`), activity: document.getElementById(`${prefix}project-activity`), applicant: document.getElementById(`${prefix}project-applicant`), applicantLocation: document.getElementById(`${prefix}project-applicant-location`) },
+                projectInfoFields: { name: document.getElementById(`${prefix}project-name`), location: document.getElementById(`${prefix}project-location`), personnel: document.getElementById(`${prefix}project-personnel`), activity: document.getElementById(`${prefix}project-activity`), applicant: document.getElementById(`${prefix}project-applicant`), applicantLocation: document.getElementById(`${prefix}project-applicant-location`), rekapNumberManual: document.getElementById(`${prefix}number-manual`) },
                 initialBudgetInput: document.getElementById(`${prefix}initial-budget`),
                 budgetDateInput: document.getElementById(`${prefix}budget-date`),
                 setBudgetBtn: document.getElementById(`${prefix}set-budget-btn`),
@@ -860,25 +962,76 @@
             };
             let state = { projectInfo: {}, budget: { amount: 0, date: '' }, expenses: [], editingId: null };
 
+            const saveRekapData = async () => {
+                const manualPart = DOMElements.projectInfoFields.rekapNumberManual.value.trim();
+                if (!manualPart) {
+                    showModal('Input Kurang', 'Nomor Rekap wajib diisi.');
+                    return;
+                }
+                state.projectInfo.rekapNumber = `REKAP-${manualPart}`;
+                
+                showNotification('Menyimpan data Rekap...', 'info');
+                const originalBtnHtml = DOMElements.saveBtn.innerHTML;
+                DOMElements.saveBtn.disabled = true;
+                DOMElements.saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin mr-2"></i>Menyimpan...`;
+
+                try {
+                    const response = await fetch('/api/simpanRekap', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            data: state,
+                            username: localStorage.getItem('loggedInUser')
+                        })
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        showNotification('Data Rekap berhasil disimpan!', 'success');
+                    } else {
+                        throw new Error(result.message || 'Gagal menyimpan data.');
+                    }
+                } catch (e) { 
+                    console.error("Error saving Rekap to Vercel: ", e); 
+                    showNotification(e.message, 'error');
+                } finally {
+                    DOMElements.saveBtn.disabled = false;
+                    DOMElements.saveBtn.innerHTML = originalBtnHtml;
+                }
+            };
+            
+            const resetRekap = () => {
+                state = { projectInfo: {}, budget: { amount: 0, date: '' }, expenses: [], editingId: null };
+                DOMElements.projectInfoFields.rekapNumberManual.value = '';
+                renderAll();
+                resetForm();
+                showNotification('Formulir Rekap telah dibersihkan.', 'info');
+            };
+
+            window.rekap_loadData = (data) => {
+                state = data;
+                DOMElements.projectInfoFields.rekapNumberManual.value = data.projectInfo.rekapNumber.replace('REKAP-', '');
+                renderAll();
+                showMainPage();
+                showNotification(`Data untuk ${data.projectInfo.rekapNumber} berhasil dimuat!`, 'success');
+            };
+
             window.rekap_selectPpu = (data) => {
+                resetRekap();
                 const { projectInfo, expenses } = data;
                 const totalProposal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-
                 state.projectInfo = projectInfo;
+                delete state.projectInfo.ppuNumber; // Hapus nomor PPU agar tidak tercampur
                 state.budget.amount = totalProposal;
                 state.budget.date = projectInfo.proposalDate || new Date().toISOString().slice(0, 10);
-                state.expenses = []; 
-
                 renderAll();
-                showNotification(`Data untuk ${projectInfo.ppuNumber} berhasil dimuat!`, 'success');
+                showNotification(`Data dari ${projectInfo.ppuNumber} berhasil ditarik!`, 'success');
                 showMainPage();
             };
             
-            DOMElements.openPpuListBtn.addEventListener('click', () => showPpuListPage('rekap'));
-            
-            DOMElements.saveBtn.addEventListener('click', () => {
-                showNotification('Fitur simpan rekap belum diaktifkan.', 'info');
-            });
+            DOMElements.openPpuListBtn.addEventListener('click', () => showPpuListPage());
+            DOMElements.openRekapListBtn.addEventListener('click', () => showRekapListPage());
+            DOMElements.saveBtn.addEventListener('click', saveRekapData);
+            DOMElements.resetBtn.addEventListener('click', resetRekap);
             
             const calculateSupervisiTotal = () => {
                 const startDateStr = parseDateFromInput(DOMElements.supervisiStartDate.value);
@@ -939,7 +1092,7 @@
             const renderProjectInfo = () => {
                 for (const key in DOMElements.projectInfoFields) {
                     const field = DOMElements.projectInfoFields[key];
-                    if(field) field.value = state.projectInfo[key] || '';
+                    if(field && key !== 'rekapNumberManual') field.value = state.projectInfo[key] || '';
                 }
             };
             const renderBudget = () => {
@@ -983,7 +1136,9 @@
             };
             Object.keys(DOMElements.projectInfoFields).forEach(key => {
                 const field = DOMElements.projectInfoFields[key];
-                if(field) field.addEventListener('blur', (e) => { state.projectInfo[key] = e.target.value; });
+                if(field && key !== 'rekapNumberManual') {
+                     field.addEventListener('blur', (e) => { state.projectInfo[key] = e.target.value; });
+                }
             });
             [DOMElements.initialBudgetInput, DOMElements.standardAmount, DOMElements.supervisiRateWork, DOMElements.supervisiRateHoliday].forEach(input => {
                 input.addEventListener('input', (e) => {
@@ -1172,7 +1327,7 @@
                 const dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
                 return dateObj.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
             })(formData.reportDate);
-            const reportHTML = `<!DOCTYPE html><html lang="id"><head><title>Preview Laporan Harian</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Inter',sans-serif;background-color:#e5e7eb;display:flex;justify-content:center;padding:2rem;} .no-print{display:block;} @page{size:A4 landscape;margin:10mm;} .report-container{width:277mm;height:190mm;display:flex;border:1px solid #ccc;background-color:white;box-shadow:0 0 20px rgba(0,0,0,0.15);overflow:hidden;} .main-content{flex:2;padding:20px;border-right:1px solid #ddd;display:flex;flex-direction:column;} .photo-sidebar{flex:1;padding:20px;display:flex;flex-direction:column;background-color:#f9fafb;justify-content:flex-start;gap:15px;} .photo-item img{aspect-ratio:16 / 9;width:100%;object-fit:cover;border-radius:8px;border:1px solid #ddd;} .section-title{font-weight:700;color:#1f2937;border-bottom:2px solid #3b82f6;padding-bottom:5px;margin-top:1rem;margin-bottom:8px;font-size:0.9rem;text-transform:uppercase;} .info-table{width:100%;border-collapse:collapse;} .info-table td{padding:3px 0;font-size:0.85rem;} .content-text,.list-disc{font-size:0.85rem;line-height:1.5;} .signature-area{margin-top:auto;} @media print{body{margin:0;padding:0;background-color:white;} .no-print{display:none;} .report-container{border:none;box-shadow:none;width:100%;height:100%;page-break-after:always;}}</style></head><body><div class="flex flex-col items-center"><div class="report-container"><div class="main-content"><div class="flex justify-between items-center pb-3 mb-3 border-b-4 border-gray-800"><img src="https://raw.githubusercontent.com/krisandi89/rekap/main/LOGO%20MULTIBANGUN%20(Primary).png" alt="Logo" class="h-7"><div class="text-center"><h1 class="text-xl font-bold uppercase">Laporan Harian Proyek</h1></div><div class="w-16"></div></div><table class="info-table mb-3"><tr><td class="w-1/4 font-semibold">Tanggal Laporan</td><td class="w-px px-2">:</td><td>${formattedDate}</td></tr><tr><td class="w-1/4 font-semibold">Nama Proyek</td><td class="w-px px-2">:</td><td>${formData.projectId || '-'}</td></tr><tr><td class="font-semibold">Lokasi Proyek</td><td class="px-2">:</td><td>${formData.projectLocation || '-'}</td></tr><tr><td class="font-semibold">Cuaca</td><td class="px-2">:</td><td>${formData.weather || '-'}</td></tr></table><h3 class="section-title">Kegiatan Utama Hari Ini</h3><ul class="list-disc list-inside content-text pl-4 mb-2">${activitiesListHtml || '<li>-</li>'}</ul><h3 class="section-title">Masalah / Kendala</h3><p class="content-text mb-2">${formData.issuesConstraints || 'Tidak ada.'}</p><h3 class="section-title">Rencana Kerja Esok Hari</h3><p class="content-text mb-2">${formData.nextDayPlan || '-'}</p><div class="flex justify-around mt-auto text-xs pt-4 signature-area"><div class="text-center"><p class="font-semibold">Dibuat Oleh,</p><div class="h-16"></div><p class="font-bold underline">${formData.reporterName || '....................'}</p><p>${formData.reporterPosition || '....................'}</p></div><div class="text-center"><p class="font-semibold">Diketahui Oleh,</p><div class="h-16"></div><p class="font-bold underline">${formData.approverName || '....................'}</p><p>${formData.approverPosition || '....................'}</p></div></div></div><div class="photo-sidebar"><h3 class="text-center font-bold text-base mb-2 border-b-2 border-gray-300 pb-2">DOKUMENTASI FOTO</h3><div class="flex flex-col justify-between flex-grow">${photosGridHtml || '<div class="text-center text-gray-500 mt-8">Tidak ada foto.</div>'}</div></div></div><div class="no-print text-center mt-6"><button onclick="window.print()" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-green-700 transition">Cetak</button><button onclick="window.close()" class="bg-gray-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-700 ml-4 transition">Tutup</button></div></div></body></html>`;
+            const reportHTML = `<!DOCTYPE html><html lang="id"><head><title>Preview Laporan Harian</title><script src="https://cdn.tailwindcss.com"><\/script><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"><style>body{font-family:'Inter',sans-serif;background-color:#e5e7eb;display:flex;justify-content:center;padding:2rem;} .no-print{display:block;} @page{size:A4 landscape;margin:10mm;} .report-container{width:277mm;height:190mm;display:flex;border:1px solid #ccc;background-color:white;box-shadow:0 0 20px rgba(0,0,0,0.15);overflow:hidden;} .main-content{flex:2;padding:20px;border-right:1px solid #ddd;display:flex;flex-direction:column;} .photo-sidebar{flex:1;padding:20px;display:flex;flex-direction:column;background-color:#f9fafb;justify-content:flex-start;gap:15px;} .photo-item img{aspect-ratio:16 / 9;width:100%;object-fit:cover;border-radius:8px;border:1px solid #ddd;} .section-title{font-weight:700;color:#1f2937;border-bottom:2px solid #3b82f6;padding-bottom:5px;margin-top:1rem;margin-bottom:8px;font-size:0.9rem;text-transform:uppercase;} .info-table{width:100%;border-collapse:collapse;} .info-table td{padding:3px 0;font-size:0.85rem;} .content-text,.list-disc{font-size:0.85rem;line-height:1.5;} .signature-area{margin-top:auto;} @media print{body{margin:0;padding:0;background-color:white;} .no-print{display:none;} .report-container{border:none;box-shadow:none;width:100%;height:100%;page-break-after:always;}}</style></head><body><div class="flex flex-col items-center"><div class="report-container"><div class="main-content"><div class="flex justify-between items-center pb-3 mb-3 border-b-4 border-gray-800"><img src="https://raw.githubusercontent.com/krisandi89/rekap/main/LOGO%20MULTIBANGUN%20(Primary).png" alt="Logo" class="h-7"><div class="text-center"><h1 class="text-xl font-bold uppercase">Laporan Harian Proyek</h1></div><div class="w-16"></div></div><table class="info-table mb-3"><tr><td class="w-1/4 font-semibold">Tanggal Laporan</td><td class="w-px px-2">:</td><td>${formattedDate}</td></tr><tr><td class="w-1/4 font-semibold">Nama Proyek</td><td class="w-px px-2">:</td><td>${formData.projectId || '-'}</td></tr><tr><td class="font-semibold">Lokasi Proyek</td><td class="px-2">:</td><td>${formData.projectLocation || '-'}</td></tr><tr><td class="font-semibold">Cuaca</td><td class="px-2">:</td><td>${formData.weather || '-'}</td></tr></table><h3 class="section-title">Kegiatan Utama Hari Ini</h3><ul class="list-disc list-inside content-text pl-4 mb-2">${activitiesListHtml || '<li>-</li>'}</ul><h3 class="section-title">Masalah / Kendala</h3><p class="content-text mb-2">${formData.issuesConstraints || 'Tidak ada.'}</p><h3 class="section-title">Rencana Kerja Esok Hari</h3><p class="content-text mb-2">${formData.nextDayPlan || '-'}</p><div class="flex justify-around mt-auto text-xs pt-4 signature-area"><div class="text-center"><p class="font-semibold">Dibuat Oleh,</p><div class="h-16"></div><p class="font-bold underline">${formData.reporterName || '....................'}</p><p>${formData.reporterPosition || '....................'}</p></div><div class="text-center"><p class="font-semibold">Diketahui Oleh,</p><div class="h-16"></div><p class="font-bold underline">${formData.approverName || '....................'}</p><p>${formData.reporterPosition || '....................'}</p></div></div></div><div class="photo-sidebar"><h3 class="text-center font-bold text-base mb-2 border-b-2 border-gray-300 pb-2">DOKUMENTASI FOTO</h3><div class="flex flex-col justify-between flex-grow">${photosGridHtml || '<div class="text-center text-gray-500 mt-8">Tidak ada foto.</div>'}</div></div></div><div class="no-print text-center mt-6"><button onclick="window.print()" class="bg-green-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-green-700 transition">Cetak</button><button onclick="window.close()" class="bg-gray-600 text-white font-bold py-2 px-6 rounded-lg shadow-md hover:bg-gray-700 ml-4 transition">Tutup</button></div></div></body></html>`;
             const newWindow = window.open('', '_blank');
             newWindow.document.write(reportHTML);
             newWindow.document.close();
