@@ -3,704 +3,1407 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quotation Generator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <title>SuperApp MRP - Dashboard</title>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Flatpickr for Date Pickers -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f0f2f5;
-        }
-        .modal {
-            display: none;
-        }
-        .modal.active {
-            display: flex;
-        }
-        
-        /* Gaya untuk Pratinjau PDF */
-        #pdf-preview-modal {
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            overflow: auto;
-            background-color: rgba(0,0,0,0.8);
-        }
-        #preview-container {
-            padding: 2rem 0;
-        }
-        .page {
-            font-family: 'Arial', sans-serif !important;
-            background-color: white;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-            width: 21cm;
-            height: 29.7cm;
-            margin: 0 auto 1.5rem auto;
-            position: relative;
-            overflow: hidden;
-            page-break-after: always;
-        }
-        .page:last-child {
-            page-break-after: auto;
-        }
-        .page-header-img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: auto;
-        }
-        .page-content-wrapper {
-            position: absolute;
-            top: 4.2cm;
-            bottom: 2.5cm;
-            left: 2.5cm;
-            right: 2cm;
-            font-size: 10pt !important;
-            line-height: 1.5 !important;
-        }
-         .page-content-inner table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        .page-content-inner th, .page-content-inner td {
-            border: 1px solid #333;
-            padding: 5px;
-        }
-        .page-content-inner th {
-             background-color: #e9e9e9;
+        :root {
+            --primary: #4361ee;
+            --secondary: #3a0ca3;
+            --accent: #f72585;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --success: #4cc9f0;
+            --warning: #ffd166;
+            --danger: #ef476f;
+            --gray: #6c757d;
+            --bg-light: #f5f7fb;
         }
 
-        @media print {
-            body * { visibility: hidden; }
-            #preview-container, #preview-container * { visibility: visible; }
-            #preview-container {
-                position: absolute; left: 0; top: 0; width: 100%; padding: 0;
-            }
-            .page { margin: 0; box-shadow: none; border: none; }
-            #form-container, #header, #modal-controls { display: none; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        /* New Header Styles */
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-radius: 12px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 20px;
+            color: var(--light);
+        }
+
+        /* General Button Styles */
+        .btn {
+            padding: 10px 18px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+        .btn:disabled {
+            background-color: #adb5bd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background-color: #e9ecef;
+            color: var(--dark);
+            border: 1px solid #dee2e6;
+        }
+        .btn-secondary:hover {
+             background-color: #dee2e6;
+        }
+
+        .btn-outline {
+            background-color: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            color: white;
+        }
+        .btn-outline:hover {
+             background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Card, Form, and Tab Styles */
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 25px;
+        }
+        
+        .app-tab-button {
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+            color: var(--gray);
+            font-weight: 600;
+            padding: 12px 20px;
+            background: none;
+            border-radius: 8px;
+        }
+        .app-tab-button.active {
+            color: var(--primary);
+            background-color: #e7e9ff;
+            border-bottom-color: var(--primary);
+        }
+        
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 8px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-size: 14px;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+        }
+
+        /* Other styles */
+        .page { display: none; }
+        .page.active { display: block; }
+        .app-pane {
+             display: none;
+             animation: fadeIn 0.5s ease-in-out;
+        }
+        .app-pane.active {
+            display: block;
+        }
+        .hidden { display: none !important; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes notificationSlideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes notificationSlideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
         }
     </style>
 </head>
-<body class="bg-gray-100 text-gray-800">
+<body>
 
-    <div id="app" class="container mx-auto p-4 md:p-8">
-
-        <!-- Header -->
-        <header class="mb-8">
-            <h1 class="text-4xl font-bold text-gray-800">Quotation Generator</h1>
-            <p class="text-gray-600">Buat, kelola, dan unduh surat penawaran harga dengan mudah.</p>
-        </header>
-
-        <!-- Main Content -->
-        <main id="main-view">
-            <div class="bg-white p-6 rounded-xl shadow-md">
-                <div class="flex flex-wrap gap-4 justify-between items-center mb-4">
-                    <h2 class="text-2xl font-semibold">Daftar Penawaran</h2>
-                    <button onclick="app.showForm()" class="bg-blue-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-sm">
-                        + Buat Penawaran Baru
-                    </button>
-                </div>
-                <div id="quotation-list" class="space-y-3">
-                    <!-- Daftar penawaran akan dirender di sini -->
-                </div>
-            </div>
-        </main>
-
-        <!-- Form View -->
-        <div id="form-view" class="hidden">
-            <div class="bg-white p-6 rounded-xl shadow-md">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 id="form-title" class="text-2xl font-semibold">Buat Penawaran Baru</h2>
-                    <button onclick="app.showList()" class="bg-gray-200 text-gray-800 font-semibold px-5 py-2 rounded-lg hover:bg-gray-300 transition-colors duration-300">
-                        &larr; Kembali ke Daftar
-                    </button>
-                </div>
-
-                <form id="quotation-form" class="space-y-6">
-                    <input type="hidden" id="quotation-id">
-
-                    <!-- Bagian Info Dasar -->
-                    <fieldset class="border p-4 rounded-lg">
-                        <legend class="text-lg font-semibold px-2">Informasi Dasar</legend>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                            <!-- Customer Info -->
-                            <div class="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 border p-4 rounded-md bg-gray-50/50">
-                                <h3 class="md:col-span-2 text-md font-semibold text-gray-600 -mt-1 mb-1">Data Pelanggan</h3>
-                                <div class="md:col-span-2">
-                                    <label for="customer-name" class="block text-sm font-medium text-gray-700">Nama Pelanggan / Perusahaan</label>
-                                    <input type="text" id="customer-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Contoh: PT Konstruksi Jaya">
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label for="customer-address" class="block text-sm font-medium text-gray-700">Alamat Pelanggan</label>
-                                    <textarea id="customer-address" rows="2" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Jl. Contoh Alamat No. 123, Jakarta"></textarea>
-                                </div>
-                                <div class="md:col-span-2">
-                                    <label for="customer-phone" class="block text-sm font-medium text-gray-700">Telepon / UP</label>
-                                    <input type="text" id="customer-phone" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="Up: Bapak Budi (0812-3456-7890)">
-                                </div>
-                            </div>
-                            <!-- Quotation Info -->
-                            <div>
-                                <label for="project-name" class="block text-sm font-medium text-gray-700">Nama Proyek</label>
-                                <input type="text" id="project-name" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                            <div>
-                                <label for="quotation-date" class="block text-sm font-medium text-gray-700">Tanggal Penawaran</label>
-                                <input type="date" id="quotation-date" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                             <div>
-                                <label for="valid-until-date" class="block text-sm font-medium text-gray-700">Berlaku Hingga</label>
-                                <input type="date" id="valid-until-date" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
-                            </div>
-                             <div>
-                                <label for="marketing-id" class="block text-sm font-medium text-gray-700">Marketing</label>
-                                <select id="marketing-id" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></select>
-                            </div>
-                             <div class="md:col-span-2">
-                                <label for="quotation-number" class="block text-sm font-medium text-gray-700">Nomor Surat</label>
-                                <input type="text" id="quotation-number" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm bg-gray-100" readonly>
-                            </div>
-                        </div>
-                    </fieldset>
-
-                    <!-- Bagian Item Penawaran -->
-                    <fieldset class="border p-4 rounded-lg">
-                        <legend class="text-lg font-semibold px-2">Item Penawaran</legend>
-                        
-                        <div class="flex items-center gap-4 mb-4">
-                            <select id="product-selector" class="block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></select>
-                            <button type="button" onclick="app.addItem()" class="bg-green-600 text-white font-semibold px-5 py-2 rounded-lg hover:bg-green-700 transition-colors duration-300 whitespace-nowrap">
-                                + Tambah Item
-                            </button>
-                        </div>
-
-                        <div class="flex flex-wrap items-center gap-4 my-4 p-3 bg-gray-50 rounded-lg">
-                            <select id="template-selector" class="block w-full md:w-auto flex-grow p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></select>
-                            <button type="button" onclick="app.loadItemTemplate()" class="bg-sky-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-sky-700">Muat</button>
-                            <button type="button" onclick="app.saveItemTemplate()" class="bg-purple-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-purple-700">Simpan Jadi Template</button>
-                            <button type="button" onclick="app.showTemplateManager()" class="bg-gray-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-gray-700">Kelola</button>
-                        </div>
-                        
-                        <div id="item-list" class="space-y-2"></div>
-                        <div class="mt-4 text-right">
-                            <p class="text-xl font-bold">Total: <span id="total-amount">Rp 0</span></p>
-                        </div>
-                    </fieldset>
-
-                    <!-- Bagian Kondisi & Pembayaran -->
-                    <fieldset class="border p-4 rounded-lg">
-                        <legend class="text-lg font-semibold px-2">Kondisi & Pembayaran</legend>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label for="conditions" class="block text-sm font-medium text-gray-700">Kondisi Penawaran</label>
-                                <textarea id="conditions" rows="8" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
-                            </div>
-                            <div>
-                                <label for="payment-method" class="block text-sm font-medium text-gray-700">Metode Pembayaran</label>
-                                <textarea id="payment-method" rows="8" class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"></textarea>
-                            </div>
-                        </div>
-                    </fieldset>
-
-                    <div class="flex justify-end gap-4 pt-4">
-                        <button type="button" onclick="app.saveQuotation()" class="bg-blue-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors duration-300 shadow-sm">
-                            Simpan Penawaran
-                        </button>
-                        <button type="button" onclick="app.showPDFPreview()" class="bg-teal-600 text-white font-bold px-6 py-3 rounded-lg hover:bg-teal-700 transition-colors duration-300 shadow-sm">
-                            Pratinjau PDF
-                        </button>
-                    </div>
+    <!-- Login Page -->
+    <div id="page-login" class="page active">
+        <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+            <div class="card" style="max-width: 420px; width: 100%; text-align: center;">
+                <h2 style="font-size: 28px; font-weight: 700; margin-bottom: 10px;">Selamat Datang</h2>
+                <p style="color: var(--gray); margin-bottom: 30px;">Silakan masuk untuk melanjutkan</p>
+                <form id="login-form" style="display: flex; flex-direction: column; gap: 20px;">
+                    <input id="username" name="username" type="text" required class="form-input" placeholder="Masukkan username">
+                    <input id="password" name="password" type="password" required class="form-input" placeholder="Masukkan password">
+                    <button type="submit" class="btn" style="background-color: var(--primary); color: white;">Masuk</button>
                 </form>
             </div>
         </div>
-        
-        <div id="pdf-preview-modal" class="modal">
-            <div class="fixed top-0 left-0 right-0 bg-white p-3 text-center z-20 shadow-lg" id="modal-controls">
-                <button onclick="document.getElementById('pdf-preview-modal').classList.remove('active')" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg mr-4">Tutup Pratinjau</button>
-                <button onclick="app.downloadPDF()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg">Unduh PDF</button>
-            </div>
-            <div id="preview-container" class="w-full h-full"></div>
-        </div>
-
-        <div id="template-manager-modal" class="modal fixed inset-0 bg-black bg-opacity-50 justify-center items-center p-4 z-50">
-            <div class="bg-white rounded-lg shadow-xl w-full max-w-lg flex flex-col">
-                <div class="p-4 border-b flex justify-between items-center">
-                    <h3 class="text-xl font-semibold">Kelola Template Item</h3>
-                    <button onclick="document.getElementById('template-manager-modal').classList.remove('active')" class="text-gray-500 hover:text-gray-800 text-2xl font-bold">&times;</button>
-                </div>
-                <div id="template-manager-list" class="p-4 space-y-2 max-h-[60vh] overflow-y-auto"></div>
-            </div>
-        </div>
-
     </div>
 
+    <!-- Main App Page -->
+    <div id="page-app" class="page">
+        <div class="container">
+            <header class="app-header">
+                <div class="user-info">
+                    <div id="user-avatar" class="user-avatar"></div>
+                    <div>
+                        <h1 id="app-header-title" style="font-size: 22px; font-weight: 700;">Dasbor Administrasi</h1>
+                        <p id="logged-in-user-greeting" style="font-size: 14px; opacity: 0.9;"></p>
+                    </div>
+                </div>
+                <div class="quick-actions">
+                     <button id="logout-btn" class="btn btn-outline"><i class="fas fa-sign-out-alt"></i>Keluar</button>
+                </div>
+            </header>
+
+            <div class="card" style="margin-bottom: 25px; padding: 10px;">
+                 <div style="display: flex; justify-content: start; gap: 8px; overflow-x: auto;">
+                    <button onclick="changeAppTab('ppu')" id="app-tab-ppu" class="app-tab-button active">
+                        <i class="fas fa-file-invoice-dollar"></i> PPU
+                    </button>
+                    <button onclick="changeAppTab('rekap')" id="app-tab-rekap" class="app-tab-button">
+                        <i class="fas fa-chart-pie"></i> Rekapitulasi
+                    </button>
+                </div>
+            </div>
+           
+            <main>
+                <div id="pane-ppu" class="app-pane active"></div>
+                <div id="pane-rekap" class="app-pane"></div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Data List Pages (PPU & Rekap) -->
+    <div id="page-ppu-list" class="page">
+        <div class="container">
+            <header style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px;">
+                <h1 style="font-size: 28px; font-weight: 700;">Daftar PPU Tersimpan</h1>
+                <button onclick="showMainPage()" class="btn btn-secondary"><i class="fas fa-times mr-2"></i>Tutup</button>
+            </header>
+            <div class="card" style="margin-bottom: 25px;">
+                <input type="text" id="ppu-list-search" class="form-input" placeholder="Cari berdasarkan Nomor PPU, Proyek, atau Lokasi...">
+            </div>
+            <div id="ppu-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;"></div>
+            <p id="ppu-list-loading" class="text-center text-gray-500 py-8">Memuat data...</p>
+        </div>
+    </div>
+    
+    <div id="page-rekap-list" class="page">
+        <div class="container">
+             <header style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 25px;">
+                <h1 style="font-size: 28px; font-weight: 700;">Daftar Rekap Tersimpan</h1>
+                <button onclick="showMainPage()" class="btn btn-secondary"><i class="fas fa-times mr-2"></i>Tutup</button>
+            </header>
+            <div class="card" style="margin-bottom: 25px;">
+                <input type="text" id="rekap-list-search" class="form-input" placeholder="Cari berdasarkan Nomor Rekap, Proyek, atau Lokasi...">
+            </div>
+            <div id="rekap-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;"></div>
+            <p id="rekap-list-loading" class="text-center text-gray-500 py-8">Memuat data...</p>
+        </div>
+    </div>
+
+    <!-- Modal for confirmations -->
+    <div id="modal" class="hidden" style="position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 50; opacity: 0; transition: opacity 0.2s;">
+        <div class="card" style="width: 100%; max-width: 450px; transform: scale(0.95); opacity: 0; transition: all 0.2s;">
+            <h3 id="modal-title" style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem;"></h3>
+            <p id="modal-message" style="color: var(--gray); margin-bottom: 1.5rem;"></p>
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                <button id="modal-cancel" class="btn btn-secondary">Batal</button>
+                <button id="modal-confirm" class="btn btn-primary">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://npmcdn.com/flatpickr/dist/l10n/id.js"></script>
     <script>
-        const app = {
-            db: {
-                products: [
-                    { id: 1, name: 'GEOMEMBRANE HDPE', description: 'Merk: HUITEX 20 MIL\nKetebalan: 0,50mm\nDimensi Roll: 7m x 420m', unit: 'm²', price: 25000 },
-                    { id: 2, name: 'Instalasi Geomembrane', description: '', unit: 'LS', price: 38000000 },
-                    { id: 3, name: 'GEOTEXTILE NON-WOVEN', description: 'Merk: MULTITEX\nTipe: 200gr/m²', unit: 'm²', price: 8000 },
-                    { id: 4, name: 'Biaya Angkut', description: '1 Truk (Max. 7 Roll)', unit: 'Truk', price: 26000000 }
-                ],
-                marketing: [
-                    { id: 1, name: 'Ir. Krisandi Saptyanto', title: 'Design and Project Manager', phone: '+62-821-1012-8965', signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw1MEMxNSwzMCwzMCwxMCw1MCwyMGMxNSw4LDQwLTUsNTAtNWMxNSwwLDMwLDE1LDQwLDQwIEMxODAsNTUsMTgwLDMwLDE5MCw0MCIvPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik04MCw0MEw5MCw1MEwxMDAsNDBMMTEwLDUwIi8+PC9zdmc+' },
-                    { id: 2, name: 'Ir. Isparmo, IPM', title: 'Marketing Manager', phone: '0812 108 3060', signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMiw0OEMyMCwzNSwzNSwxNSw1NSwyNWMxOCw4LDM1LTIsNDUtMWMxMiwyLDMwLDEwLDQwLDMwIEMxNzAsNTAsMTc1LDMwLDE4OCw0MiIvPjwvc3ZnPg==' },
-                    { id: 3, name: 'Ir. Nuruzzaman', title: 'Technical & Marketing Manager', phone: '0811-877-022', signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xNSw1MEMyMCwzMCw0MCwxMCw2MCwyMGMxOCw4LDM4LTUsNDgtNWMxMiwwLDM1LDE1LDQ1LDQwIEMxODAsNTUsMTg1LDMwLDE5MCw0NCIvPjwvc3ZnPg==' },
-                    { id: 4, name: 'Ir. Astri Juwita P.', title: 'Design & Product Manager', phone: '+62-812-9876-5432', signatureImg: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyMDAgODAiPjxzdHlsZT4uc3Ryb2tlIHtzdHJva2U6IzAwMDtmaWxsOm5vbmU7c3Ryb2tlLXdpZHRoOjI7c3Ryb2tlLWxpbmVjYXA6cm91bmQ7c3Ryb2tlLWxpbmVqb2luOnJvdW5kO308L3N0eWxlPjxwYXRoIGNsYXNzPSJzdHJva2UiIGQ9Ik0xMCw1NUMyNSwzNSw0NSwxNSw2NSwyMmMxOCw2LDQwLTgsNTAtMTBjMTUsLTMsMjUsMTgsMzUsNDIgQzE4MCw1MCwxODIsMzIsMTkwLDQxIi8+PC9zdmc+' }
-                ],
-                defaultConditions: `• Harga Material Locco Gudang Multibangun di Bitung, Tangerang.\n• Harga Material dan Instalasi belum termasuk PPN 11%.\n• Harga Instalasi tidak termasuk genset 10 kVA & dewatering pump.\n• Harga Instalasi tidak termasuk persiapan lahan dan pekerjaan tanah seperti penggalian, penimbunan dan pembuatan angkur.\n• Harga Instalasi tidak termasuk Unskilled labor (kuli gelar) dan besi angkur.\n• Harga Instalasi tidak termasuk peralatan tambahan seperti plat strip, baut, dll bila diperlukan.\n• Harga Instalasi tidak termasuk biaya langsir Material.\n• Harga Instalasi sudah termasuk akomodasi, transportasi, penginapan dan tes kesehatan untuk installer.\n• Harga Instalasi dengan asumsi pekerjaan dilakukan bukan pada musim hujan.`,
-                defaultPaymentMethod: `• Material: Cash in Advance.\n• Instalasi: DP 50%, sisa pelunasan sesuai dengan prosentase progress pekerjaan secara bertahap.\n• Pengambilan Material setelah Purchase Order dan pembayaran diterima.\n• Material Ready Stock.`
-            },
+        // --- GLOBAL SCOPE ---
+        const modal = document.getElementById('modal');
+        const modalContainer = modal.querySelector('.card');
+        const modalTitle = document.getElementById('modal-title');
+        const modalMessage = document.getElementById('modal-message');
+        const modalConfirm = document.getElementById('modal-confirm');
+        const modalCancel = document.getElementById('modal-cancel');
+        let globalConfirmCallback = null;
+        let globalHolidays = {};
+        
+        // --- DYNAMIC NOTIFICATION SYSTEM ---
+        function showNotification(message, type = 'info', duration = 5000) {
+            const types = {
+                info: { icon: 'fas fa-info-circle', color: 'var(--primary)' },
+                success: { icon: 'fas fa-check-circle', color: 'var(--success)' },
+                warning: { icon: 'fas fa-exclamation-triangle', color: 'var(--warning)' },
+                error: { icon: 'fas fa-exclamation-circle', color: 'var(--danger)' }
+            };
             
-            state: {
-                quotations: [],
-                itemTemplates: [],
-                currentQuotationItems: [],
-            },
+            const notification = document.createElement('div');
+            notification.className = 'card';
+            notification.style.cssText = `position: fixed; right: 1.5rem; top: 1.5rem; max-width: 350px; width: 100%; z-index: 100; animation: notificationSlideIn 0.3s ease-out forwards; border-left: 5px solid ${types[type].color};`;
+            
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; padding: 0.5rem;">
+                    <div style="flex-shrink: 0;">
+                        <i class="${types[type].icon}" style="font-size: 20px; color: ${types[type].color};"></i>
+                    </div>
+                    <div style="margin-left: 12px; flex: 1;">
+                        <p style="font-size: 14px; font-weight: 600; color: var(--dark);">${message}</p>
+                    </div>
+                    <div style="margin-left: 16px; flex-shrink: 0;">
+                        <button style="background: none; border: none; color: #9ca3af; cursor: pointer;">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            const timer = setTimeout(() => hideNotification(notification), duration);
+            notification.querySelector('button').addEventListener('click', () => {
+                clearTimeout(timer);
+                hideNotification(notification);
+            });
+        }
 
-            init() {
-                this.loadFromLocalStorage();
-                this.populateDropdowns();
-                this.renderQuotationList();
-                this.showList();
-            },
+        function hideNotification(notification) {
+            notification.style.animation = 'notificationSlideOut 0.3s ease-in forwards';
+            setTimeout(() => notification.remove(), 300);
+        }
 
-            showList() {
-                document.getElementById('main-view').classList.remove('hidden');
-                document.getElementById('form-view').classList.add('hidden');
-                this.renderQuotationList();
-            },
+        // --- NAVIGATION ---
+        function changeAppTab(appName) {
+            ['ppu', 'rekap'].forEach(tab => {
+                document.getElementById(`app-tab-${tab}`)?.classList.remove('active');
+                document.getElementById(`pane-${tab}`)?.classList.remove('active');
+            });
+            document.getElementById(`app-tab-${appName}`)?.classList.add('active');
+            document.getElementById(`pane-${appName}`)?.classList.add('active');
+        }
 
-            showForm(id = null) {
-                document.getElementById('main-view').classList.add('hidden');
-                document.getElementById('form-view').classList.remove('hidden');
-                this.resetForm();
+        function showMainPage() {
+            document.getElementById('page-app').classList.add('active');
+            document.getElementById('page-ppu-list').classList.remove('active');
+            document.getElementById('page-rekap-list').classList.remove('active');
+            document.getElementById('page-login').classList.remove('active');
+        }
 
-                if (id !== null) {
-                    document.getElementById('form-title').innerText = 'Edit Penawaran';
-                    const quotation = this.state.quotations.find(q => q.id === id);
-                    if (quotation) {
-                        document.getElementById('quotation-id').value = quotation.id;
-                        document.getElementById('customer-name').value = quotation.customer.name;
-                        document.getElementById('customer-address').value = quotation.customer.address;
-                        document.getElementById('customer-phone').value = quotation.customer.phone;
-                        document.getElementById('marketing-id').value = quotation.marketingId;
-                        document.getElementById('project-name').value = quotation.projectName;
-                        document.getElementById('quotation-date').value = quotation.date;
-                        document.getElementById('quotation-number').value = quotation.number;
-                        document.getElementById('valid-until-date').value = quotation.validUntil;
-                        document.getElementById('conditions').value = quotation.conditions;
-                        document.getElementById('payment-method').value = quotation.paymentMethod;
-                        this.state.currentQuotationItems = JSON.parse(JSON.stringify(quotation.items));
+        function showLoginPage() {
+            document.getElementById('page-app').classList.remove('active');
+            document.getElementById('page-ppu-list').classList.remove('active');
+            document.getElementById('page-rekap-list').classList.remove('active');
+            document.getElementById('page-login').classList.add('active');
+        }
+
+        function showPpuListPage(targetApp = 'ppu') {
+            document.getElementById('page-app').classList.remove('active');
+            document.getElementById('page-ppu-list').classList.add('active');
+            document.getElementById('page-rekap-list').classList.remove('active');
+            fetchAllPpuDataForList(targetApp);
+        }
+        
+        function showRekapListPage() {
+            document.getElementById('page-app').classList.remove('active');
+            document.getElementById('page-ppu-list').classList.remove('active');
+            document.getElementById('page-rekap-list').classList.add('active');
+            fetchAllRekapDataForList();
+        }
+        
+        // --- GLOBAL UTILITIES ---
+        const formatTextForPreview = (text) => (text || '-').replace(/\n/g, '<br>');
+
+        const showModal = (title, message, type = 'alert', onConfirm = null) => {
+            modalTitle.textContent = title;
+            modalMessage.innerHTML = message;
+            globalConfirmCallback = onConfirm;
+            modalCancel.style.display = type !== 'confirm' ? 'none' : 'inline-flex';
+            modalConfirm.textContent = type === 'confirm' ? 'Ya, Hapus' : 'OK';
+            if (type === 'confirm') {
+                modalConfirm.style.backgroundColor = 'var(--danger)';
+            } else {
+                modalConfirm.style.backgroundColor = 'var(--primary)';
+            }
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.style.opacity = '1';
+                modalContainer.style.opacity = '1';
+                modalContainer.style.transform = 'scale(1)';
+            }, 10);
+        };
+        
+        const hideModal = () => {
+            modal.style.opacity = '0';
+            modalContainer.style.transform = 'scale(0.95)';
+            modalContainer.style.opacity = '0';
+            setTimeout(() => modal.classList.add('hidden'), 200);
+        };
+        
+        modalConfirm.addEventListener('click', () => {
+            if (globalConfirmCallback) globalConfirmCallback();
+            hideModal();
+        });
+        modalCancel.addEventListener('click', hideModal);
+        
+        const parseCurrency = (value) => parseFloat(String(value).replace(/[^\d]/g, '')) || 0;
+        const formatToCurrency = (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+        const formatForInputCurrency = (amount) => amount > 0 ? 'Rp ' + new Intl.NumberFormat('id-ID').format(amount) : '';
+        const formatDateForReport = (dateString, options = { day: '2-digit', month: 'short', year: 'numeric' }) => {
+            if (!dateString) return '';
+            const [year, month, day] = dateString.split('-');
+            return new Date(year, month - 1, day).toLocaleDateString('id-ID', options);
+        };
+        const formatDateForInput = (dateString) => {
+            if (!dateString || dateString.length < 10) return '';
+            const [year, month, day] = dateString.split('-');
+            return `${day}/${month}/${year}`;
+        };
+        const parseDateFromInput = (str) => {
+            if (!str || !/^\d{2}\/\d{2}\/\d{4}$/.test(str)) return null;
+            const [day, month, year] = str.split('/').map(Number);
+            const date = new Date(year, month - 1, day);
+            if (date.getFullYear() !== year || date.getMonth() + 1 !== month || date.getDate() !== day) return null;
+            return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        };
+        
+        async function fetchHolidays() {
+            if (Object.keys(globalHolidays).length > 0) return;
+            const currentYear = new Date().getFullYear();
+            for (const year of [currentYear - 1, currentYear, currentYear + 1]) {
+                try {
+                    const response = await fetch(`https://date.nager.at/api/v3/PublicHolidays/${year}/ID`);
+                    if (!response.ok) continue;
+                    const holidays = await response.json();
+                    globalHolidays[year] = {};
+                    holidays.forEach(h => { globalHolidays[year][h.date] = h.localName; });
+                } catch (error) {
+                    console.error(`Gagal mengambil data hari libur untuk tahun ${year}:`, error);
+                }
+            }
+        }
+        
+        const isNationalHoliday = (date) => {
+            const year = date.getFullYear();
+            const dateString = date.toISOString().slice(0, 10);
+            return globalHolidays[year] ? globalHolidays[year][dateString] : null;
+        };
+        
+        function getDayCounts(startDate, endDate) {
+            if (!startDate || !endDate || startDate > endDate) return { workCount: 0, holidayCount: 0, holidayDetails: [] };
+            let workCount = 0, holidayCount = 0, holidayDetails = [];
+            let currentDate = new Date(startDate);
+            while (currentDate <= endDate) {
+                const dayOfWeek = currentDate.getDay();
+                const holidayName = isNationalHoliday(currentDate);
+                if (dayOfWeek === 0 || holidayName) {
+                    holidayCount++;
+                    if (holidayName) {
+                        const dateString = new Date(currentDate.getTime() - (currentDate.getTimezoneOffset() * 60000)).toISOString().slice(0, 10);
+                        holidayDetails.push({ date: dateString, name: holidayName });
                     }
                 } else {
-                    document.getElementById('form-title').innerText = 'Buat Penawaran Baru';
-                    const today = new Date();
-                    document.getElementById('quotation-date').value = today.toISOString().split('T')[0];
-                    today.setDate(today.getDate() + 14);
-                    document.getElementById('valid-until-date').value = today.toISOString().split('T')[0];
-                    document.getElementById('quotation-number').value = this.generateQuotationNumber();
-                    document.getElementById('conditions').value = this.db.defaultConditions;
-                    document.getElementById('payment-method').value = this.db.defaultPaymentMethod;
+                    workCount++;
                 }
-                this.renderItems();
-            },
-            
-            resetForm() {
-                document.getElementById('quotation-form').reset();
-                document.getElementById('quotation-id').value = '';
-                this.state.currentQuotationItems = [];
-                this.renderItems();
-            },
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            return { workCount, holidayCount, holidayDetails };
+        }
+        
+        // --- LOGIN & AUTHENTICATION ---
+        const allowedUsers = {
+            'krisandi': '12345', 'wira': '12345', 'denny': '12345',
+            'valdy': '12345', 'astri': '12345', 'isparmo': '12345',
+            'zaman': '12345', 'rifa': '12345',
+        };
 
-            populateDropdowns() {
-                const productSelect = document.getElementById('product-selector');
-                productSelect.innerHTML = '<option value="">-- Pilih Item --</option>';
-                this.db.products.forEach(p => {
-                    productSelect.innerHTML += `<option value="${p.id}">${p.name}</option>`;
-                });
+        function handleLogin(event) {
+            event.preventDefault();
+            const username = document.getElementById('username').value.toLowerCase();
+            const password = document.getElementById('password').value;
 
-                const marketingSelect = document.getElementById('marketing-id');
-                marketingSelect.innerHTML = '<option value="">-- Pilih Marketing --</option>';
-                this.db.marketing.forEach(m => {
-                    marketingSelect.innerHTML += `<option value="${m.id}">${m.name}</option>`;
-                });
+            if (allowedUsers[username] && allowedUsers[username] === password) {
+                localStorage.setItem('loggedInUser', username);
+                initializeApp();
+            } else {
+                showNotification('Username atau password salah.', 'error');
+            }
+        }
+
+        function handleLogout() {
+            localStorage.removeItem('loggedInUser');
+            window.location.reload();
+        }
+
+        // --- GLOBAL DATA LIST MANAGEMENT ---
+        let allPpuData = [];
+        let allRekapData = [];
+
+        async function global_handleDelete(event, number, type) {
+            event.stopPropagation();
+            const confirmMessage = `Anda yakin ingin menghapus <b>${type.toUpperCase()} "${number}"</b>? <br>Tindakan ini tidak dapat dibatalkan.`;
+            showModal('Konfirmasi Hapus', confirmMessage, 'confirm', async () => {
+                const username = localStorage.getItem('loggedInUser');
+                if (!username) return showNotification('Sesi tidak valid. Silakan login kembali.', 'error');
                 
-                this.populateTemplateDropdown();
-            },
-            
-            populateTemplateDropdown() {
-                const templateSelect = document.getElementById('template-selector');
-                templateSelect.innerHTML = '<option value="">-- Pilih Template Item --</option>';
-                this.state.itemTemplates.forEach(t => {
-                    templateSelect.innerHTML += `<option value="${t.id}">${t.name}</option>`;
-                });
-            },
-
-            renderQuotationList() {
-                const listEl = document.getElementById('quotation-list');
-                if (this.state.quotations.length === 0) {
-                    listEl.innerHTML = `<div class="text-center text-gray-500 py-8"><p class="text-lg">Belum ada penawaran.</p><p>Klik "Buat Penawaran Baru" untuk memulai.</p></div>`;
-                    return;
-                }
-                listEl.innerHTML = this.state.quotations.sort((a,b) => b.id - a.id).map(q => {
-                    return `<div class="border rounded-lg p-4 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors">
-                        <div>
-                            <p class="font-bold text-blue-700">${q.number}</p>
-                            <p class="text-gray-800">${q.customer.name} - ${q.projectName}</p>
-                            <p class="text-sm text-gray-500">Tanggal: ${this.formatDate(q.date)} | Total: ${this.formatCurrency(q.total)}</p>
-                        </div>
-                        <div class="flex gap-2">
-                            <button onclick="app.showForm(${q.id})" class="text-blue-600 hover:text-blue-800 font-medium">Edit</button>
-                            <button onclick="app.deleteQuotation(${q.id})" class="text-red-600 hover:text-red-800 font-medium">Hapus</button>
-                        </div>
-                    </div>`;
-                }).join('');
-            },
-
-            renderItems() {
-                const itemListEl = document.getElementById('item-list');
-                if (this.state.currentQuotationItems.length === 0) {
-                    itemListEl.innerHTML = '<p class="text-center text-gray-400 py-4">Belum ada item ditambahkan.</p>';
-                } else {
-                     itemListEl.innerHTML = this.state.currentQuotationItems.map((item, index) => `
-                        <div class="grid grid-cols-12 gap-3 items-start p-2 rounded-md bg-gray-50">
-                            <div class="col-span-12 md:col-span-4"><p class="font-semibold">${item.name}</p><p class="text-xs text-gray-500 whitespace-pre-wrap">${item.description}</p></div>
-                            <div class="col-span-6 md:col-span-2"><label class="text-sm text-gray-500">Volume</label><input type="text" inputmode="decimal" value="${item.volume}" oninput="app.updateItemLive(this, ${index}, 'volume')" class="w-full p-1 border rounded-md"></div>
-                            <div class="col-span-6 md:col-span-1 text-center"><p class="text-sm text-gray-500 mt-6">${item.unit}</p></div>
-                            <div class="col-span-6 md:col-span-2"><label class="text-sm text-gray-500">Harga Satuan (Rp)</label><input type="text" inputmode="decimal" value="${this.formatCurrencyForInput(item.price)}" oninput="app.updateItemLive(this, ${index}, 'price')" class="w-full p-1 border rounded-md"></div>
-                            <div class="col-span-5 md:col-span-2 text-right"><p class="text-sm text-gray-500">Jumlah</p><p id="item-total-${index}" class="font-semibold">${this.formatCurrency(item.total)}</p></div>
-                            <div class="col-span-1 text-right"><button type="button" onclick="app.removeItem(${index})" class="text-red-500 hover:text-red-700 p-2 mt-4 font-bold text-lg">&times;</button></div>
-                        </div>`).join('');
-                }
-                this.calculateTotal();
-            },
-
-             addItem() {
-                const productId = document.getElementById('product-selector').value;
-                if (!productId) return;
-                const product = this.db.products.find(p => p.id == productId);
-                if (product) {
-                    this.state.currentQuotationItems.push({ ...product, volume: 1, total: product.price });
-                    this.renderItems();
-                }
-                 document.getElementById('product-selector').value = '';
-            },
-
-            removeItem(index) {
-                this.state.currentQuotationItems.splice(index, 1);
-                this.renderItems();
-            },
-
-            updateItemLive(element, index, field) {
-                const item = this.state.currentQuotationItems[index];
-                if (!item) return;
-                let numericValue = (field === 'price') ? this.unformatCurrency(element.value) : (parseFloat(element.value.replace(/,/g, '.')) || 0);
-                if (field === 'price') element.value = this.formatCurrencyForInput(numericValue);
-                item[field] = numericValue;
-                item.total = (item.volume || 0) * (item.price || 0);
-                document.getElementById(`item-total-${index}`).innerText = this.formatCurrency(item.total);
-                this.calculateTotal();
-            },
-            
-            calculateTotal() {
-                const total = this.state.currentQuotationItems.reduce((sum, item) => sum + (item.total || 0), 0);
-                document.getElementById('total-amount').innerText = this.formatCurrency(total);
-                return total;
-            },
-
-            saveQuotation(showListAfterSave = true) {
-                const id = document.getElementById('quotation-id').value;
-                const customerData = {
-                    name: document.getElementById('customer-name').value.trim(),
-                    address: document.getElementById('customer-address').value.trim(),
-                    phone: document.getElementById('customer-phone').value.trim()
-                };
-                const marketingId = document.getElementById('marketing-id').value;
-
-                if (!customerData.name) { alert("Silakan isi nama pelanggan."); return null; }
-                if (!marketingId) { alert("Silakan pilih marketing."); return null; }
-
-                let quotationData = {
-                    customer: customerData,
-                    marketingId: parseInt(marketingId),
-                    projectName: document.getElementById('project-name').value,
-                    date: document.getElementById('quotation-date').value,
-                    number: document.getElementById('quotation-number').value,
-                    validUntil: document.getElementById('valid-until-date').value,
-                    items: this.state.currentQuotationItems,
-                    conditions: document.getElementById('conditions').value,
-                    paymentMethod: document.getElementById('payment-method').value,
-                    total: this.calculateTotal()
-                };
-
-                if (id) {
-                    const index = this.state.quotations.findIndex(q => q.id == id);
-                    if (index > -1) {
-                         this.state.quotations[index] = { ...this.state.quotations[index], ...quotationData };
-                         quotationData.id = parseInt(id);
+                showNotification(`Menghapus ${type.toUpperCase()}...`, 'info');
+                try {
+                    const apiPath = type === 'ppu' ? '/api/hapusPPU' : '/api/hapusRekap';
+                    const response = await fetch(apiPath, {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, number })
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(errorText || 'Gagal menghapus data. Status: ' + response.status);
                     }
-                } else {
-                    quotationData.id = Date.now();
-                    this.state.quotations.push(quotationData);
+
+                    const result = await response.json();
+                    if (!result.success) throw new Error(result.message);
+
+                    showNotification(`${type.toUpperCase()} berhasil dihapus.`, 'success');
+                    if (type === 'ppu') {
+                        allPpuData = allPpuData.filter(d => d.projectInfo.ppuNumber !== number);
+                        renderPpuList(document.getElementById('ppu-list-search').value);
+                    } else {
+                        allRekapData = allRekapData.filter(d => d.projectInfo.rekapNumber !== number);
+                        renderRekapList(document.getElementById('rekap-list-search').value);
+                    }
+                } catch (error) {
+                    console.error(`Gagal menghapus ${type.toUpperCase()}:`, error);
+                    showNotification(error.message, 'error');
                 }
+            });
+        }
+
+        function renderPpuList(filter = '', targetApp = 'ppu') {
+            const container = document.getElementById('ppu-list-container');
+            container.innerHTML = '';
+            const searchTerm = filter.toUpperCase();
+            const filteredData = allPpuData.filter(data => 
+                data.projectInfo.ppuNumber.toUpperCase().includes(searchTerm) ||
+                (data.projectInfo.name && data.projectInfo.name.toUpperCase().includes(searchTerm)) ||
+                (data.projectInfo.location && data.projectInfo.location.toUpperCase().includes(searchTerm))
+            );
+
+            if (filteredData.length === 0) {
+                container.innerHTML = `<p style="text-align: center; color: var(--gray); grid-column: 1 / -1;">Tidak ada data PPU yang cocok.</p>`;
+                return;
+            }
+            
+            filteredData.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
+
+            filteredData.forEach(data => {
+                const total = data.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                const savedDate = data.savedAt ? new Date(data.savedAt).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : 'N/A';
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.cssText = 'display: flex; flex-direction: column; justify-content: space-between; position: relative; transition: all 0.3s ease; cursor: pointer;';
+                card.onmouseover = () => { card.style.transform = 'translateY(-5px)'; card.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)'; };
+                card.onmouseout = () => { card.style.transform = 'none'; card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'; };
+
+                const encodedData = encodeURIComponent(JSON.stringify(data));
+                const clickHandler = targetApp === 'rekap' ? `window.rekap_selectPpu(JSON.parse(decodeURIComponent('${encodedData}')))` : `window.ppu_loadData(JSON.parse(decodeURIComponent('${encodedData}')))`;
                 
-                this.saveToLocalStorage();
-                if(showListAfterSave) this.showList();
-                return quotationData;
-            },
-            
-            deleteQuotation(id) {
-                if(confirm('Apakah Anda yakin ingin menghapus penawaran ini?')) {
-                    this.state.quotations = this.state.quotations.filter(q => q.id !== id);
-                    this.saveToLocalStorage();
-                    this.renderQuotationList();
-                }
-            },
-
-            showTemplateManager() {
-                this.renderTemplateManager();
-                document.getElementById('template-manager-modal').classList.add('active');
-            },
-
-            renderTemplateManager() {
-                const listEl = document.getElementById('template-manager-list');
-                if (this.state.itemTemplates.length === 0) {
-                    listEl.innerHTML = '<p class="text-center text-gray-500 py-4">Belum ada template tersimpan.</p>';
-                    return;
-                }
-                listEl.innerHTML = this.state.itemTemplates.map(t => `
-                    <div class="flex justify-between items-center p-2 border rounded-md">
-                        <span>${t.name}</span>
-                        <div>
-                            <button onclick="app.editTemplateName(${t.id})" class="text-sm text-blue-600 hover:underline mr-2">Edit Nama</button>
-                            <button onclick="app.deleteTemplate(${t.id})" class="text-sm text-red-600 hover:underline">Hapus</button>
+                card.innerHTML = `
+                    <button onclick="global_handleDelete(event, '${data.projectInfo.ppuNumber}', 'ppu')" style="position: absolute; top: 10px; right: 10px; background: #f1f5f9; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; color: var(--gray); display: flex; align-items: center; justify-content: center;"><i class="fas fa-trash-alt fa-sm"></i></button>
+                    <div onclick="${clickHandler}">
+                        <div style="padding-right: 30px;">
+                            <p style="font-weight: 700; color: var(--dark);">${data.projectInfo.ppuNumber}</p>
+                            <p style="font-size: 14px; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${data.projectInfo.name || 'Tanpa Nama Proyek'}</p>
+                            <p style="font-size: 12px; color: #adb5bd;"><i class="fas fa-map-marker-alt" style="margin-right: 4px;"></i>${data.projectInfo.location || 'Tanpa Lokasi'}</p>
                         </div>
-                    </div>`).join('');
-            },
+                        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e9ecef;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <p style="font-size: 12px; color: var(--gray);">Total Pengajuan</p>
+                                    <p style="font-weight: 600; color: var(--primary);">${formatToCurrency(total)}</p>
+                                </div>
+                                <p style="font-size: 12px; color: #adb5bd;">${savedDate}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+        
+        function renderRekapList(filter = '') {
+            const container = document.getElementById('rekap-list-container');
+            container.innerHTML = '';
+            const searchTerm = filter.toUpperCase();
+            const filteredData = allRekapData.filter(data => 
+                data.projectInfo.rekapNumber.toUpperCase().includes(searchTerm) ||
+                (data.projectInfo.name && data.projectInfo.name.toUpperCase().includes(searchTerm)) ||
+                (data.projectInfo.location && data.projectInfo.location.toUpperCase().includes(searchTerm))
+            );
+
+            if (filteredData.length === 0) {
+                container.innerHTML = `<p style="text-align: center; color: var(--gray); grid-column: 1 / -1;">Tidak ada data Rekap yang cocok.</p>`;
+                return;
+            }
             
-            editTemplateName(id) {
-                const template = this.state.itemTemplates.find(t => t.id === id);
-                if(!template) return;
-                const newName = prompt('Masukkan nama template baru:', template.name);
-                if (newName && newName.trim() !== '') {
-                    template.name = newName.trim();
-                    this.saveToLocalStorage();
-                    this.renderTemplateManager();
-                    this.populateTemplateDropdown();
-                }
-            },
+            filteredData.sort((a, b) => new Date(b.savedAt) - new Date(a.savedAt));
 
-            deleteTemplate(id) {
-                if (confirm('Apakah Anda yakin ingin menghapus template ini?')) {
-                    this.state.itemTemplates = this.state.itemTemplates.filter(t => t.id !== id);
-                    this.saveToLocalStorage();
-                    this.renderTemplateManager();
-                    this.populateTemplateDropdown();
-                }
-            },
+            filteredData.forEach(data => {
+                const balance = data.budget.amount - data.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                const savedDate = data.savedAt ? new Date(data.savedAt).toLocaleDateString('id-ID', {day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'}) : 'N/A';
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.style.cssText = 'display: flex; flex-direction: column; justify-content: space-between; position: relative; transition: all 0.3s ease; cursor: pointer;';
+                card.onmouseover = () => { card.style.transform = 'translateY(-5px)'; card.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)'; };
+                card.onmouseout = () => { card.style.transform = 'none'; card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'; };
+                
+                const encodedData = encodeURIComponent(JSON.stringify(data));
+                
+                card.innerHTML = `
+                     <button onclick="global_handleDelete(event, '${data.projectInfo.rekapNumber}', 'rekap')" style="position: absolute; top: 10px; right: 10px; background: #f1f5f9; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; color: var(--gray); display: flex; align-items: center; justify-content: center;"><i class="fas fa-trash-alt fa-sm"></i></button>
+                    <div onclick="window.rekap_loadData(JSON.parse(decodeURIComponent('${encodedData}')))">
+                        <div style="padding-right: 30px;">
+                            <p style="font-weight: 700; color: var(--dark);">${data.projectInfo.rekapNumber}</p>
+                            <p style="font-size: 14px; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${data.projectInfo.name || 'Tanpa Nama Proyek'}</p>
+                            <p style="font-size: 12px; color: #adb5bd;"><i class="fas fa-map-marker-alt" style="margin-right: 4px;"></i>${data.projectInfo.location || 'Tanpa Lokasi'}</p>
+                        </div>
+                        <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e9ecef;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <p style="font-size: 12px; color: var(--gray);">Sisa Budget</p>
+                                    <p style="font-weight: 600; color: ${balance < 0 ? 'var(--danger)' : 'var(--success)'};">${formatToCurrency(balance)}</p>
+                                </div>
+                                <p style="font-size: 12px; color: #adb5bd;">${savedDate}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
 
-            saveItemTemplate() {
-                if (this.state.currentQuotationItems.length === 0) {
-                    alert('Tidak ada item untuk disimpan sebagai template.');
+        async function fetchAllPpuDataForList(targetApp) {
+            const loadingEl = document.getElementById('ppu-list-loading');
+            const container = document.getElementById('ppu-list-container');
+            loadingEl.style.display = 'block';
+            container.innerHTML = '';
+            const username = localStorage.getItem('loggedInUser');
+            if(!username) return;
+
+            try {
+                const response = await fetch(`/api/ambilSemuaNomorPPU?username=${username}`);
+                const result = await response.json();
+                if(result.success && result.keys.length > 0) {
+                    const promises = result.keys.map(key => 
+                        fetch(`/api/ambilPPU?number=${key.replace(username + '-', '')}&username=${username}`).then(res => res.json())
+                    );
+                    const allResults = await Promise.all(promises);
+                    allPpuData = allResults.map(res => res.data).filter(Boolean);
+                    renderPpuList('', targetApp);
+                } else {
+                    container.innerHTML = `<p style="text-align: center; color: var(--gray); grid-column: 1 / -1;">Belum ada data PPU yang tersimpan.</p>`;
+                }
+            } catch (error) {
+                console.error("Gagal mengambil daftar PPU:", error);
+                container.innerHTML = `<p style="text-align: center; color: var(--danger); grid-column: 1 / -1;">Gagal memuat data. Coba lagi nanti.</p>`;
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        async function fetchAllRekapDataForList() {
+            const loadingEl = document.getElementById('rekap-list-loading');
+            const container = document.getElementById('rekap-list-container');
+            loadingEl.style.display = 'block';
+            container.innerHTML = '';
+            const username = localStorage.getItem('loggedInUser');
+            if(!username) return;
+
+            try {
+                const response = await fetch(`/api/ambilSemuaNomorRekap?username=${username}`);
+                const result = await response.json();
+                if(result.success && result.keys.length > 0) {
+                    const promises = result.keys.map(key => 
+                        fetch(`/api/ambilRekap?number=${key.replace(username + '-', '')}&username=${username}`).then(res => res.json())
+                    );
+                    const allResults = await Promise.all(promises);
+                    allRekapData = allResults.map(res => res.data).filter(Boolean);
+                    renderRekapList();
+                } else {
+                    container.innerHTML = `<p style="text-align: center; color: var(--gray); grid-column: 1 / -1;">Belum ada data Rekap yang tersimpan.</p>`;
+                }
+            } catch (error) {
+                console.error("Gagal mengambil daftar Rekap:", error);
+                container.innerHTML = `<p style="text-align: center; color: var(--danger); grid-column: 1 / -1;">Gagal memuat data. Coba lagi nanti.</p>`;
+            } finally {
+                loadingEl.style.display = 'none';
+            }
+        }
+        
+        // --- CONTENT INJECTION & INITIALIZATION ---
+        async function initializeApp() {
+            const loggedInUser = localStorage.getItem('loggedInUser');
+            if (!loggedInUser) {
+                showLoginPage();
+                document.getElementById('login-form').addEventListener('submit', handleLogin);
+                return;
+            }
+            
+            // New UI Population
+            const userAvatar = document.getElementById('user-avatar');
+            const userGreeting = document.getElementById('logged-in-user-greeting');
+            if(userAvatar) userAvatar.textContent = loggedInUser.charAt(0).toUpperCase();
+            if(userGreeting) userGreeting.textContent = `Masuk sebagai: ${loggedInUser.charAt(0).toUpperCase() + loggedInUser.slice(1)}`;
+
+            document.getElementById('logout-btn').addEventListener('click', handleLogout);
+            showMainPage();
+
+            document.getElementById('pane-ppu').innerHTML = `<div style="display: flex; flex-direction: column; gap: 25px;"><div class="card"><div style="display: flex; flex-direction: column; md:flex-direction: row; align-items: center; justify-content: center; gap: 1rem;"><h2 style="font-size: 1.25rem; font-weight: 600; color: #343a40;">Mulai PPU Baru</h2><span style="color: #6c757d;">atau</span><button id="ppu-open-ppu-list-btn" class="btn btn-primary"><i class="fas fa-search" style="margin-right: 8px;"></i>Cari & Muat PPU Tersimpan</button></div></div><div class="card"><h2 style="font-size: 1.25rem; font-weight: 600; color: #343a40; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e9ecef;">Informasi Proyek</h2><div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; md:grid-template-columns: repeat(2, 1fr);"><div><label for="ppu-project-name" class="block text-sm font-medium text-gray-600 mb-1">Proyek</label><textarea id="ppu-project-name" class="form-textarea" rows="2"></textarea></div><div><label for="ppu-project-location" class="block text-sm font-medium text-gray-600 mb-1">Lokasi</label><textarea id="ppu-project-location" class="form-textarea" rows="2"></textarea></div><div><label for="ppu-project-activity" class="block text-sm font-medium text-gray-600 mb-1">Kegiatan/Sub-Judul Laporan</label><textarea id="ppu-project-activity" class="form-textarea" rows="2"></textarea></div><div><label for="ppu-project-personnel" class="block text-sm font-medium text-gray-600 mb-1">Nama Personil</label><textarea id="ppu-project-personnel" class="form-textarea" rows="2"></textarea></div><div><label for="ppu-project-applicant" class="block text-sm font-medium text-gray-600 mb-1">Nama Pemohon</label><textarea id="ppu-project-applicant" class="form-textarea" rows="2"></textarea></div><div><label for="ppu-project-applicant-location" class="block text-sm font-medium text-gray-600 mb-1">Lokasi Pemohon</label><textarea id="ppu-project-applicant-location" class="form-textarea" rows="2" placeholder="Contoh: Jakarta"></textarea></div><div><label for="ppu-proposal-date" class="block text-sm font-medium text-gray-600 mb-1">Tanggal Pengajuan</label><input type="text" id="ppu-proposal-date" class="form-input" placeholder="dd/mm/yyyy"></div><div><label for="ppu-project-date" class="block text-sm font-medium text-gray-600 mb-1">Tanggal Pengeluaran Uang</label><input type="text" id="ppu-project-date" class="form-input" placeholder="dd/mm/yyyy"></div><div class="md:col-span-2"><label for="ppu-number-manual" class="block text-sm font-medium text-gray-600 mb-1">Nomor PPU</label><div style="display: flex; align-items: center;"><span style="background-color: #e9ecef; padding: 10px 12px; border-radius: 8px 0 0 8px; border: 1px solid #ced4da; border-right: none; color: var(--gray);">PPU-</span><input type="text" id="ppu-number-manual" class="form-input" style="border-radius: 0 8px 8px 0;" placeholder="Contoh: 01-WTP"></div></div></div></div><div class="card" style="text-align: center;"><p style="color: var(--gray); font-size: 14px;">Total Pengajuan</p><h3 id="ppu-summary-total-proposal" style="font-size: 36px; font-weight: 800; color: var(--primary);">Rp 0</h3></div><div class="card"><h2 id="ppu-form-title" style="font-size: 1.25rem; font-weight: 600; color: #343a40; margin-bottom: 1.5rem;">Tambah Rincian Pengajuan</h2><form id="ppu-expense-form"><div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; md:grid-template-columns: repeat(2, 1fr); lg:grid-template-columns: repeat(4, 1fr); align-items: flex-end;"><div><label for="ppu-expense-category" class="block text-sm font-medium text-gray-600 mb-1">1. Pilih Kategori</label><select id="ppu-expense-category" class="form-select" required><option value="">-- Pilih --</option><option value="Uang Supervisi">Uang Supervisi</option><option value="Transportasi">Transportasi</option><option value="Konsumsi">Konsumsi</option><option value="Akomodasi">Akomodasi</option><option value="Komunikasi">Komunikasi</option><option value="Lainnya">Lainnya</option></select></div></div><div id="ppu-standard-inputs" class="hidden" style="margin-top: 1rem; display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; lg:grid-template-columns: repeat(3, 1fr); align-items: flex-end;"><div style="grid-column: lg:span 2 / lg:span 2;"><label for="ppu-standard-description" id="ppu-standard-description-label" class="block text-sm font-medium text-gray-600 mb-1">2. Keterangan</label><input type="text" id="ppu-standard-description" class="form-input"></div><div><label for="ppu-standard-amount" class="block text-sm font-medium text-gray-600 mb-1">3. Jumlah</label><input type="text" id="ppu-standard-amount" inputmode="numeric" class="form-input" placeholder="Rp 0"></div></div><div id="ppu-supervisi-inputs" class="hidden" style="margin-top: 1rem; display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; md:grid-template-columns: repeat(2, 1fr); lg:grid-template-columns: repeat(4, 1fr); align-items: flex-start;"><div style="grid-column: md:span 2 / md:span 2; lg:span 1 / lg:span 1;"><label for="ppu-supervisi-name" class="block text-sm font-medium text-gray-600 mb-1">2. Nama Supervisi</label><input type="text" id="ppu-supervisi-name" class="form-input"></div><div style="grid-column: md:span 2 / md:span 2; lg:span 3 / lg:span 3;"><label class="block text-sm font-medium text-gray-600 mb-1">3. Pilih Periode</label><div style="display: flex; align-items: center; gap: 0.5rem;"><input type="text" id="ppu-supervisi-start-date" class="form-input" placeholder="dd/mm/yyyy"><span style="color: var(--gray);">s/d</span><input type="text" id="ppu-supervisi-end-date" class="form-input" placeholder="dd/mm/yyyy"></div></div><div><label for="ppu-supervisi-rate-work" class="block text-sm font-medium text-gray-600 mb-1">4. Nom. Hari Kerja</label><input type="text" id="ppu-supervisi-rate-work" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div><label for="ppu-supervisi-rate-holiday" class="block text-sm font-medium text-gray-600 mb-1">5. Nom. Hari Libur</label><input type="text" id="ppu-supervisi-rate-holiday" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div><label class="block text-sm font-medium text-gray-600 mb-1">Jml Hari</label><div style="display: flex; align-items: center; gap: 0.5rem;"><input type="text" id="ppu-supervisi-day-count-work" class="form-input" style="background-color: #f8f9fa;" readonly placeholder="Kerja"><input type="text" id="ppu-supervisi-day-count-holiday" class="form-input" style="background-color: #f8f9fa;" readonly placeholder="Libur"></div></div><div><label for="ppu-supervisi-description" class="block text-sm font-medium text-gray-600 mb-1">6. Ket. Tambahan</label><input type="text" id="ppu-supervisi-description" class="form-input" placeholder="(Opsional)"></div><div style="grid-column: 1 / -1;"><label for="ppu-supervisi-total-amount" class="block text-sm font-medium text-gray-600 mb-1">Total Biaya Supervisi</label><input type="text" id="ppu-supervisi-total-amount" class="form-input" style="background-color: #f8f9fa; font-weight: bold;" readonly></div></div><div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 24px;"><button type="submit" id="ppu-add-expense-btn" class="btn btn-primary"><i class="fas fa-plus"></i>Tambah</button><button type="button" id="ppu-cancel-edit-btn" class="btn btn-secondary hidden"><i class="fas fa-times"></i>Batal</button></div></form></div><div class="card"><div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem;"><h2 style="font-size: 1.25rem; font-weight: 600;">Rincian Pengajuan</h2><div style="display: flex; gap: 8px;"><button id="ppu-reset-btn" class="btn btn-secondary"><i class="fas fa-file"></i>Buat Baru</button><button id="ppu-preview-proposal-btn" class="btn btn-secondary"><i class="fas fa-eye"></i>Preview</button><button id="ppu-save-btn" class="btn btn-primary"><i class="fas fa-save"></i>Simpan</button></div></div><div style="overflow-x: auto; margin-top: 1rem;"><table style="width: 100%; text-align: left;"><thead style="background-color: #f8f9fa;"><tr><th style="padding: 12px; font-size: 14px; font-weight: 600;">Tanggal/Periode</th><th style="padding: 12px; font-size: 14px; font-weight: 600;">Keterangan</th><th style="padding: 12px; font-size: 14px; font-weight: 600;">Kategori</th><th style="padding: 12px; font-size: 14px; font-weight: 600; text-align: right;">Jumlah</th><th style="padding: 12px; font-size: 14px; font-weight: 600; text-align: center;">Aksi</th></tr></thead><tbody id="ppu-expense-table-body"></tbody></table><p id="ppu-no-data-message" style="text-align: center; color: var(--gray); padding: 32px 0;">Belum ada rincian pengajuan.</p></div></div></div>`;
+            document.getElementById('pane-rekap').innerHTML = `<div style="display: flex; flex-direction: column; gap: 25px;"><div class="card"><h2 style="font-size: 1.25rem; font-weight: 600; text-align: center; margin-bottom: 1.5rem;">Mulai Rekapitulasi</h2><div style="display: flex; flex-direction: column; md:flex-direction: row; align-items: center; justify-content: center; gap: 1rem;"><button id="rekap-open-ppu-list-btn" class="btn btn-secondary"><i class="fas fa-file-import"></i>Tarik Data dari PPU</button><span style="color: var(--gray);">atau</span><button id="rekap-open-rekap-list-btn" class="btn btn-primary"><i class="fas fa-search"></i>Cari Rekap Tersimpan</button></div></div><div class="card"><h2 style="font-size: 1.25rem; font-weight: 600; color: #343a40; margin-bottom: 1.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid #e9ecef;">Informasi Proyek</h2><div style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; md:grid-template-columns: repeat(2, 1fr);"><div><label for="rekap-project-name" class="block text-sm font-medium text-gray-600 mb-1">Proyek</label><textarea id="rekap-project-name" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-location" class="block text-sm font-medium text-gray-600 mb-1">Lokasi</label><textarea id="rekap-project-location" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-activity" class="block text-sm font-medium text-gray-600 mb-1">Kegiatan/Sub-Judul Laporan</label><textarea id="rekap-project-activity" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-personnel" class="block text-sm font-medium text-gray-600 mb-1">Nama Personil</label><textarea id="rekap-project-personnel" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-applicant" class="block text-sm font-medium text-gray-600 mb-1">Nama Pemohon</label><textarea id="rekap-project-applicant" class="form-textarea" rows="2"></textarea></div><div><label for="rekap-project-applicant-location" class="block text-sm font-medium text-gray-600 mb-1">Lokasi Pemohon</label><textarea id="rekap-project-applicant-location" class="form-textarea" rows="2" placeholder="Contoh: Jakarta"></textarea></div><div class="md:col-span-2"><label for="rekap-number-manual" class="block text-sm font-medium text-gray-600 mb-1">Nomor Rekap</label><div style="display: flex; align-items: center;"><span style="background-color: #e9ecef; padding: 10px 12px; border-radius: 8px 0 0 8px; border: 1px solid #ced4da; border-right: none; color: var(--gray);">REKAP-</span><input type="text" id="rekap-number-manual" class="form-input" style="border-radius: 0 8px 8px 0;" placeholder="Contoh: 01-WTP-FIN"></div></div></div></div><div class="card"><h2 style="font-size: 1.25rem; font-weight: 600; color: #343a40; margin-bottom: 1.5rem;">Sumber Dana</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end"><div><label for="rekap-initial-budget" class="block text-sm font-medium text-gray-600 mb-1">Total Uang Diterima</label><input type="text" id="rekap-initial-budget" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div><label for="rekap-budget-date" class="block text-sm font-medium text-gray-600 mb-1">Tanggal Diterima</label><input type="text" id="rekap-budget-date" class="form-input" placeholder="dd/mm/yyyy"></div><div><button id="rekap-set-budget-btn" class="btn w-full" style="background-color: var(--primary); color: white;"><i class="fas fa-save"></i>Atur Budget</button></div></div></div><div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"><div class="card p-5 flex items-center"><div style="background-color: #e7e9ff; color: var(--primary); padding: 1rem; border-radius: 50%; margin-right: 1rem;"><i class="fas fa-wallet fa-2x"></i></div><div><p style="color: var(--gray); font-size: 14px;">Total Budget</p><h3 id="rekap-summary-budget" class="text-2xl font-bold text-gray-800">Rp 0</h3></div></div><div class="card p-5 flex items-center"><div style="background-color: #ffeeee; color: var(--danger); padding: 1rem; border-radius: 50%; margin-right: 1rem;"><i class="fas fa-arrow-down-wide-short fa-2x"></i></div><div><p style="color: var(--gray); font-size: 14px;">Total Pengeluaran</p><h3 id="rekap-summary-expenses" class="text-2xl font-bold text-gray-800">Rp 0</h3></div></div><div class="card p-5 flex items-center"><div style="background-color: #e6fffa; color: #14b8a6; padding: 1rem; border-radius: 50%; margin-right: 1rem;"><i class="fas fa-coins fa-2x"></i></div><div><p style="color: var(--gray); font-size: 14px;">Sisa Budget</p><h3 id="rekap-summary-balance" class="text-2xl font-bold text-gray-800">Rp 0</h3></div></div></div><div class="card"><h2 id="rekap-form-title" class="text-xl font-semibold text-gray-700 mb-4">Tambah Pengeluaran Baru</h2><form id="rekap-expense-form"><div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-end"><div><label for="rekap-expense-category" class="block text-sm font-medium text-gray-600 mb-1">1. Pilih Kategori</label><select id="rekap-expense-category" class="form-select" required><option value="">-- Pilih --</option><option value="Uang Supervisi">Uang Supervisi</option><option value="Transportasi">Transportasi</option><option value="Konsumsi">Konsumsi</option><option value="Akomodasi">Akomodasi</option><option value="Komunikasi">Komunikasi</option><option value="Lainnya">Lainnya</option></select></div></div><div id="rekap-standard-inputs" class="hidden mt-4 grid grid-cols-1 lg:grid-cols-4 gap-4 items-end"><div><label for="rekap-standard-date" class="block text-sm font-medium text-gray-600 mb-1">2. Tanggal</label><input type="text" id="rekap-standard-date" class="form-input" placeholder="dd/mm/yyyy"></div><div class="lg:col-span-2"><label for="rekap-standard-description" id="rekap-standard-description-label" class="block text-sm font-medium text-gray-600 mb-1">3. Keterangan</label><input type="text" id="rekap-standard-description" class="form-input"></div><div><label for="rekap-standard-amount" class="block text-sm font-medium text-gray-600 mb-1">4. Jumlah</label><input type="text" id="rekap-standard-amount" inputmode="numeric" class="form-input" placeholder="Rp 0"></div></div><div id="rekap-supervisi-inputs" class="hidden mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 items-start"><div class="md:col-span-2 lg:col-span-1"><label for="rekap-supervisi-name" class="block text-sm font-medium text-gray-600 mb-1">2. Nama Supervisi</label><input type="text" id="rekap-supervisi-name" class="form-input"></div><div class="md:col-span-2 lg:col-span-3"><label class="block text-sm font-medium text-gray-600 mb-1">3. Pilih Periode</label><div class="flex items-center space-x-2"><input type="text" id="rekap-supervisi-start-date" class="form-input" placeholder="dd/mm/yyyy"><span class="text-gray-500">s/d</span><input type="text" id="rekap-supervisi-end-date" class="form-input" placeholder="dd/mm/yyyy"></div></div><div class="md:col-span-1"><label for="rekap-supervisi-rate-work" class="block text-sm font-medium text-gray-600 mb-1">4. Nom. Hari Kerja</label><input type="text" id="rekap-supervisi-rate-work" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div class="md:col-span-1"><label for="rekap-supervisi-rate-holiday" class="block text-sm font-medium text-gray-600 mb-1">5. Nom. Hari Libur</label><input type="text" id="rekap-supervisi-rate-holiday" inputmode="numeric" class="form-input" placeholder="Rp 0"></div><div class="md:col-span-1"><label class="block text-sm font-medium text-gray-600 mb-1">Jml Hari</label><div class="flex items-center space-x-2"><input type="text" id="rekap-supervisi-day-count-work" class="form-input bg-gray-100" readonly placeholder="Kerja"><input type="text" id="rekap-supervisi-day-count-holiday" class="form-input bg-gray-100" readonly placeholder="Libur"></div></div><div class="md:col-span-1"><label for="rekap-supervisi-description" class="block text-sm font-medium text-gray-600 mb-1">6. Ket. Tambahan</label><input type="text" id="rekap-supervisi-description" class="form-input" placeholder="(Opsional)"></div><div class="md:col-span-4"><label for="rekap-supervisi-total-amount" class="block text-sm font-medium text-gray-600 mb-1">Total Biaya Supervisi</label><input type="text" id="rekap-supervisi-total-amount" class="form-input bg-gray-100 font-bold" readonly></div></div><div class="flex justify-end space-x-2 mt-6"><button type="submit" id="rekap-add-expense-btn" class="btn btn-primary"><i class="fas fa-plus"></i>Tambah</button><button type="button" id="rekap-cancel-edit-btn" class="btn btn-secondary hidden"><i class="fas fa-times"></i>Batal</button></div></form></div><div class="card"><div class="flex flex-wrap justify-between items-center gap-4"><h2 class="text-xl font-semibold text-gray-700">Laporan & Riwayat</h2><div class="flex gap-2"><button id="rekap-reset-btn" class="btn btn-secondary"><i class="fas fa-file"></i>Buat Baru</button><button id="rekap-preview-report-btn" class="btn btn-secondary"><i class="fas fa-eye"></i>Preview</button><button id="rekap-save-btn" class="btn btn-primary"><i class="fas fa-save"></i>Simpan</button></div></div><div class="overflow-x-auto mt-4"><table style="width: 100%; text-align: left;"><thead style="background-color: #f8f9fa;"><tr><th style="padding: 12px; font-size: 14px; font-weight: 600;">Tanggal/Periode</th><th style="padding: 12px; font-size: 14px; font-weight: 600;">Keterangan</th><th style="padding: 12px; font-size: 14px; font-weight: 600;">Kategori</th><th style="padding: 12px; font-size: 14px; font-weight: 600; text-align: right;">Jumlah</th><th style="padding: 12px; font-size: 14px; font-weight: 600; text-align: center;">Aksi</th></tr></thead><tbody id="rekap-expense-table-body"></tbody></table><p id="rekap-no-data-message" class="text-center text-gray-500 py-8">Belum ada data pengeluaran.</p></div></div></div>`;
+            
+            await fetchHolidays();
+            initPPUApp();
+            initRekapApp();
+            document.getElementById('ppu-list-search').addEventListener('input', (e) => renderPpuList(e.target.value));
+            document.getElementById('rekap-list-search').addEventListener('input', (e) => renderRekapList(e.target.value));
+        }
+
+        document.addEventListener('DOMContentLoaded', initializeApp);
+        
+        // --- PPU APP SCRIPT ---
+        function initPPUApp() {
+            const prefix = 'ppu-';
+            const DOMElements = {
+                openPpuListBtn: document.getElementById(`${prefix}open-ppu-list-btn`),
+                resetBtn: document.getElementById(`${prefix}reset-btn`),
+                saveBtn: document.getElementById(`${prefix}save-btn`),
+                projectInfoFields: { name: document.getElementById(`${prefix}project-name`), location: document.getElementById(`${prefix}project-location`), personnel: document.getElementById(`${prefix}project-personnel`), activity: document.getElementById(`${prefix}project-activity`), applicant: document.getElementById(`${prefix}project-applicant`), applicantLocation: document.getElementById(`${prefix}project-applicant-location`), proposalDate: document.getElementById(`${prefix}proposal-date`), projectDate: document.getElementById(`${prefix}project-date`), ppuNumberManual: document.getElementById(`${prefix}number-manual`) },
+                summaryTotalProposal: document.getElementById(`${prefix}summary-total-proposal`),
+                expenseForm: document.getElementById(`${prefix}expense-form`),
+                formTitle: document.getElementById(`${prefix}form-title`),
+                expenseIdInput: document.getElementById(`${prefix}expense-id`),
+                expenseCategoryInput: document.getElementById(`${prefix}expense-category`),
+                addExpenseBtn: document.getElementById(`${prefix}add-expense-btn`),
+                cancelEditBtn: document.getElementById(`${prefix}cancel-edit-btn`),
+                expenseTableBody: document.getElementById(`${prefix}expense-table-body`),
+                noDataMessage: document.getElementById(`${prefix}no-data-message`),
+                previewProposalBtn: document.getElementById(`${prefix}preview-proposal-btn`),
+                standardInputs: document.getElementById(`${prefix}standard-inputs`),
+                supervisiInputs: document.getElementById(`${prefix}supervisi-inputs`),
+                standardDescription: document.getElementById(`${prefix}standard-description`),
+                standardDescriptionLabel: document.getElementById(`${prefix}standard-description-label`),
+                standardAmount: document.getElementById(`${prefix}standard-amount`),
+                supervisiName: document.getElementById(`${prefix}supervisi-name`),
+                supervisiStartDate: document.getElementById(`${prefix}supervisi-start-date`),
+                supervisiEndDate: document.getElementById(`${prefix}supervisi-end-date`),
+                supervisiRateWork: document.getElementById(`${prefix}supervisi-rate-work`),
+                supervisiRateHoliday: document.getElementById(`${prefix}supervisi-rate-holiday`),
+                supervisiDayCountWork: document.getElementById(`${prefix}supervisi-day-count-work`),
+                supervisiDayCountHoliday: document.getElementById(`${prefix}supervisi-day-count-holiday`),
+                supervisiDescription: document.getElementById(`${prefix}supervisi-description`),
+                supervisiTotalAmount: document.getElementById(`${prefix}supervisi-total-amount`)
+            };
+            let state = { projectInfo: {}, expenses: [] };
+
+            const saveDataToVercel = async () => {
+                const manualPart = DOMElements.projectInfoFields.ppuNumberManual.value.trim();
+                if (!manualPart) {
+                    showModal('Input Kurang', 'Nomor PPU wajib diisi.');
                     return;
                 }
-                const templateName = prompt('Masukkan nama untuk template ini:', '');
-                if (templateName && templateName.trim() !== '') {
-                    const newTemplate = {
-                        id: Date.now(),
-                        name: templateName.trim(),
-                        items: JSON.parse(JSON.stringify(this.state.currentQuotationItems))
-                    };
-                    this.state.itemTemplates.push(newTemplate);
-                    this.saveToLocalStorage();
-                    this.populateTemplateDropdown();
-                    alert(`Template "${templateName}" berhasil disimpan!`);
+                state.projectInfo.ppuNumber = `PPU-${manualPart}`;
+                
+                showNotification('Menyimpan data PPU...', 'info');
+                const originalBtnHtml = DOMElements.saveBtn.innerHTML;
+                DOMElements.saveBtn.disabled = true;
+                DOMElements.saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>Menyimpan...`;
+
+                try {
+                    const response = await fetch('/api/simpanPPU', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            data: state,
+                            username: localStorage.getItem('loggedInUser')
+                        })
+                    });
+                    
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        showNotification('Data PPU berhasil disimpan!', 'success');
+                    } else {
+                        throw new Error(result.message || 'Gagal menyimpan data.');
+                    }
+                } catch (e) { 
+                    console.error("Error saving PPU to Vercel: ", e); 
+                    showNotification(e.message, 'error');
+                } finally {
+                    DOMElements.saveBtn.disabled = false;
+                    DOMElements.saveBtn.innerHTML = `<i class="fas fa-save"></i>Simpan`;
                 }
-            },
+            };
             
-            loadItemTemplate() {
-                const templateId = document.getElementById('template-selector').value;
-                if (!templateId) return;
-                const template = this.state.itemTemplates.find(t => t.id == templateId);
-                if (template) {
-                    this.state.currentQuotationItems = JSON.parse(JSON.stringify(template.items));
-                    this.renderItems();
+            const calculateSupervisiTotal = () => {
+                const startDateStr = parseDateFromInput(DOMElements.supervisiStartDate.value);
+                const endDateStr = parseDateFromInput(DOMElements.supervisiEndDate.value);
+                if (!startDateStr || !endDateStr) {
+                    DOMElements.supervisiDayCountWork.value = `0 hr kerja`;
+                    DOMElements.supervisiDayCountHoliday.value = `0 hr libur`;
+                    DOMElements.supervisiTotalAmount.value = '';
+                    return;
                 }
-            },
-            
-             generateQuotationNumber() {
-                const date = new Date();
-                const year = date.getFullYear();
-                if (this.state.quotations.length === 0) return `228/MRP/PWRN/${this.toRoman(date.getMonth() + 1)}/${year}`;
-                const lastQuotation = this.state.quotations.sort((a,b) => b.id - a.id)[0];
-                const lastNumber = parseInt(lastQuotation.number.split('/')[0]) || 227;
-                return `${lastNumber + 1}/MRP/PWRN/${this.toRoman(date.getMonth() + 1)}/${year}`;
-            },
-            
-            toRoman(num) {
-                const roman = {M:1000,CM:900,D:500,CD:400,C:100,XC:90,L:50,XL:40,X:10,IX:9,V:5,IV:4,I:1};
-                let str = '';
-                for (let i of Object.keys(roman)) {
-                    let q = Math.floor(num / roman[i]);
-                    num -= q * roman[i];
-                    str += i.repeat(q);
+                const startDate = new Date(`${startDateStr}T00:00:00`);
+                const endDate = new Date(`${endDateStr}T00:00:00`);
+                const { workCount, holidayCount } = getDayCounts(startDate, endDate);
+                DOMElements.supervisiDayCountWork.value = `${workCount} hr kerja`;
+                DOMElements.supervisiDayCountHoliday.value = `${holidayCount} hr libur`;
+                const rateWork = parseCurrency(DOMElements.supervisiRateWork.value);
+                const rateHoliday = parseCurrency(DOMElements.supervisiRateHoliday.value);
+                const total = (workCount * rateWork) + (holidayCount * rateHoliday);
+                DOMElements.supervisiTotalAmount.value = formatForInputCurrency(total);
+            };
+            const renderTotalProposal = () => {
+                const total = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                DOMElements.summaryTotalProposal.textContent = formatToCurrency(total);
+            };
+            const renderTable = () => {
+                DOMElements.expenseTableBody.innerHTML = '';
+                const hasExpenses = state.expenses.length > 0;
+                DOMElements.noDataMessage.style.display = hasExpenses ? 'none' : 'table-row';
+                if (hasExpenses) {
+                    [...state.expenses].sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(exp => {
+                        const row = DOMElements.expenseTableBody.insertRow();
+                        row.style.borderBottom = '1px solid #e9ecef';
+                        row.insertCell().textContent = exp.isPeriod ? `${formatDateForReport(exp.date)} - ${formatDateForReport(exp.endDate)}` : formatDateForReport(state.projectInfo.projectDate);
+                        let descriptionHtml = exp.description;
+                        if (exp.category === 'Uang Supervisi' && exp.details?.holidayDetails?.length > 0) {
+                            const holidayList = exp.details.holidayDetails.map(h => `<li>${formatDateForReport(h.date, {day: 'numeric', month: 'short'})}: ${h.name}</li>`).join('');
+                            descriptionHtml += `<ul style="font-size: 12px; color: var(--gray); margin-top: 4px; padding-left: 20px;">Ket. Libur:${holidayList}</ul>`;
+                        }
+                        row.insertCell().innerHTML = descriptionHtml;
+                        row.insertCell().innerHTML = `<span style="padding: 4px 8px; font-size: 12px; font-weight: 500; border-radius: 12px; background-color: #e9ecef; color: #495057; white-space: nowrap;">${exp.category}</span>`;
+                        row.insertCell().textContent = formatToCurrency(exp.amount);
+                        const actionId = exp.groupId || exp.id;
+                        row.insertCell().innerHTML = `<button onclick="window.ppu_handleEdit('${actionId}')" title="Edit" style="color: var(--primary); background: none; border: none; cursor: pointer; margin-right: 8px;"><i class="fas fa-pencil-alt"></i></button><button onclick="window.ppu_handleDelete('${actionId}')" title="Hapus" style="color: var(--danger); background: none; border: none; cursor: pointer;"><i class="fas fa-trash-alt"></i></button>`;
+                        
+                        Array.from(row.cells).forEach(cell => cell.style.padding = '12px');
+                        row.cells[3].style.textAlign = 'right';
+                        row.cells[4].style.textAlign = 'center';
+
+                    });
                 }
-                return str;
-            },
-            
-            formatCurrency: (amount) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount || 0),
-            formatCurrencyForInput: (value) => (value === null || value === undefined) ? '' : new Intl.NumberFormat('id-ID').format(value),
-            unformatCurrency: (value) => parseFloat(String(value).replace(/[^0-9]/g, '')) || 0,
-            formatDate(dateString) {
-                if (!dateString) return '';
-                const date = new Date(dateString + 'T00:00:00');
-                return new Intl.DateTimeFormat('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }).format(date);
-            },
-
-            saveToLocalStorage() {
-                const dataToSave = { quotations: this.state.quotations, itemTemplates: this.state.itemTemplates };
-                localStorage.setItem('quotationAppData', JSON.stringify(dataToSave));
-            },
-            
-            loadFromLocalStorage() {
-                const data = localStorage.getItem('quotationAppData');
-                if (data) {
-                    const parsedData = JSON.parse(data);
-                    this.state.quotations = parsedData.quotations || [];
-                    this.state.itemTemplates = parsedData.itemTemplates || [];
-                }
-            },
-
-            showPDFPreview() {
-                const quotation = this.saveQuotation(false);
-                if (quotation) {
-                    this.generateAndPaginateContent(quotation);
-                    document.getElementById('pdf-preview-modal').classList.add('active');
-                }
-            },
-
-            createNewPage() {
-                const page = document.createElement('div');
-                page.className = 'page';
-                page.innerHTML = `<img class="page-header-img" src="https://raw.githack.com/krisandi89/penawaranmrp/main/kop%20surat%20multibangun.png" alt="Kop Surat"><div class="page-content-wrapper"><div class="page-content-inner"></div></div>`;
-                document.getElementById('preview-container').appendChild(page);
-                return page.querySelector('.page-content-inner');
-            },
-
-            generateAndPaginateContent(quotation) {
-                const previewContainer = document.getElementById('preview-container');
-                previewContainer.innerHTML = '';
-                let currentContentContainer = this.createNewPage();
-                const allContentElements = this.buildAllContentElements(quotation);
-
-                for (const el of allContentElements) {
-                    currentContentContainer.appendChild(el);
-                    if (currentContentContainer.parentElement.parentElement.scrollHeight > currentContentContainer.parentElement.parentElement.offsetHeight) {
-                        el.remove();
-                        currentContentContainer = this.createNewPage();
-                        currentContentContainer.appendChild(el);
-
-                        // Special handling for split tables
-                        if (el.tagName === 'TABLE') {
-                            const header = el.querySelector('thead');
-                            if(header) {
-                                const newTable = currentContentContainer.querySelector('table');
-                                if(newTable) newTable.prepend(header.cloneNode(true));
-                            }
+            };
+            const renderProjectInfo = () => {
+                for (const key in DOMElements.projectInfoFields) {
+                    const field = DOMElements.projectInfoFields[key];
+                    if(field) {
+                        if (key === 'projectDate' || key === 'proposalDate') {
+                            field.value = formatDateForInput(state.projectInfo[key]);
+                        } else if (key !== 'ppuNumberManual') {
+                            field.value = state.projectInfo[key] || '';
                         }
                     }
                 }
-            },
-
-            buildAllContentElements(quotation) {
-                const fragment = document.createDocumentFragment();
-                const customer = quotation.customer;
-                const marketingPerson = this.db.marketing.find(m => m.id == quotation.marketingId);
-
-                const headInfo = document.createElement('div');
-                headInfo.style.display = 'flex';
-                headInfo.style.justifyContent = 'space-between';
-                headInfo.style.marginBottom = '2rem';
-                headInfo.innerHTML = `<p>No. <span style="font-weight: bold;">${quotation.number}</span></p><p>${this.formatDate(quotation.date)}</p>`;
-                fragment.appendChild(headInfo);
-
-                const clientSection = document.createElement('section');
-                clientSection.innerHTML = `<p>Kepada Yth.:</p>
-                                        <p style="font-weight: bold; text-transform: uppercase;">${customer.name}</p>
-                                        <div style="white-space: pre-wrap;">${customer.address}</div><br>
-                                        <p style="white-space: pre-wrap;">${customer.phone}</p>`;
-                fragment.appendChild(clientSection);
-
-                const subjectSection = document.createElement('section');
-                subjectSection.style.margin = '1.5rem 0';
-                subjectSection.innerHTML = `<p style="font-weight: bold; text-decoration: underline;">Perihal: <span>Penawaran Harga</span></p>
-                                          <p>Proyek: <span>${quotation.projectName}</span></p>`;
-                fragment.appendChild(subjectSection);
-
-                const openingSection = document.createElement('section');
-                openingSection.style.marginBottom = '1.5rem';
-                openingSection.innerHTML = `<p>Dengan hormat,</p><p>Menindaklanjuti permohonan penawaran harga resmi kami untuk proyek tersebut, maka bersama ini saya kirimkan harga produk kami sebagai berikut:</p>`;
-                fragment.appendChild(openingSection);
-
-                const table = document.createElement('table');
-                let tableHTML = `<thead><tr><th style="width: 45%;">Material</th><th>Volume</th><th>Harga</th><th>Jumlah Harga</th></tr></thead><tbody>`;
-                quotation.items.forEach(item => {
-                    tableHTML += `<tr><td><div style="font-weight: bold;">${item.name}</div><div style="font-size: 8pt; white-space: pre-wrap;">${item.description}</div></td><td style="text-align: center;">${this.formatCurrencyForInput(item.volume)} ${item.unit}</td><td style="text-align: right;">${this.formatCurrency(item.price)}</td><td style="text-align: right;">${this.formatCurrency(item.total)}</td></tr>`;
-                });
-                tableHTML += `<tr><td colspan="3" style="text-align: right; font-weight: bold;">Total</td><td style="text-align: right; font-weight: bold;">${this.formatCurrency(quotation.total)}</td></tr>`;
-                table.innerHTML = tableHTML + '</tbody>';
-                fragment.appendChild(table);
-
-                 const createSection = (title, content) => {
-                    const section = document.createElement('section');
-                    section.style.marginTop = '1.5rem';
-                    section.innerHTML = `<h4 style="font-weight: bold;">${title}</h4><div style="padding-left: 1rem; white-space: pre-wrap; font-size: 9pt;">${content}</div>`;
-                    return section;
-                };
-                fragment.appendChild(createSection('Kondisi Penawaran :', quotation.conditions));
-                fragment.appendChild(createSection('Metode Pembayaran :', quotation.paymentMethod));
-                
-                const closingSection = document.createElement('section');
-                closingSection.style.marginTop = '1.5rem';
-                closingSection.innerHTML = `<p>Penawaran harga ini berlaku sampai dengan tanggal <span style="font-weight: bold;">${this.formatDate(quotation.validUntil)}</span>.</p><br><p>Demikian penawaran harga ini kami sampaikan. Atas perhatian dan kerjasamanya kami ucapkan terima kasih.</p>`;
-                fragment.appendChild(closingSection);
-
-                if (marketingPerson) {
-                    const signatureSection = document.createElement('footer');
-                    signatureSection.style.marginTop = '2rem';
-                    signatureSection.innerHTML = `<p>Hormat kami,</p>
-                                                <div style="height: 6rem; position: relative;"><img src="${marketingPerson.signatureImg}" alt="Tanda Tangan" style="height: 6rem;"></div>
-                                                <p style="font-weight: bold;">${marketingPerson.name}</p>
-                                                <p style="font-style: italic;">${marketingPerson.title}</p>
-                                                <p>${marketingPerson.phone}</p>`;
-                    fragment.appendChild(signatureSection);
+            };
+            const renderAll = () => {
+                renderProjectInfo();
+                renderTotalProposal();
+                renderTable();
+            };
+            const updateFormUI = (category) => {
+                DOMElements.standardInputs.classList.add('hidden');
+                DOMElements.supervisiInputs.classList.add('hidden');
+                DOMElements.standardDescriptionLabel.textContent = '2. Keterangan';
+                DOMElements.standardDescription.placeholder = 'Detail pengeluaran';
+                if (category === 'Uang Supervisi') {
+                    DOMElements.supervisiInputs.classList.remove('hidden');
+                    calculateSupervisiTotal();
+                } else if (category) {
+                    DOMElements.standardInputs.classList.remove('hidden');
+                    if(category === 'Lainnya') {
+                         DOMElements.standardDescriptionLabel.textContent = '2. Ketik Kategori & Keterangan';
+                         DOMElements.standardDescription.placeholder = 'Contoh: Biaya Cetak Dokumen Proyek';
+                    }
                 }
+            };
+            const resetForm = () => {
+                DOMElements.expenseForm.reset();
+                state.editingId = null;
+                DOMElements.formTitle.textContent = 'Tambah Rincian Pengajuan';
+                DOMElements.addExpenseBtn.innerHTML = '<i class="fas fa-plus"></i>Tambah';
+                DOMElements.cancelEditBtn.classList.add('hidden');
+                updateFormUI('');
+            };
+            const resetAll = () => {
+                state = { projectInfo: {}, expenses: [] };
+                DOMElements.projectInfoFields.ppuNumberManual.value = '';
+                renderAll();
+                resetForm();
+                showNotification('Formulir PPU telah dibersihkan.', 'info');
+            };
 
-                return Array.from(fragment.children);
-            },
+            DOMElements.saveBtn.addEventListener('click', saveDataToVercel);
+            DOMElements.openPpuListBtn.addEventListener('click', () => showPpuListPage());
+            DOMElements.resetBtn.addEventListener('click', resetAll);
+
+            Object.keys(DOMElements.projectInfoFields).forEach(key => {
+                const field = DOMElements.projectInfoFields[key];
+                if(field && key !== 'ppuNumberManual') {
+                    field.addEventListener('blur', (e) => {
+                        state.projectInfo[key] = (key === 'projectDate' || key === 'proposalDate') ? parseDateFromInput(e.target.value) || '' : e.target.value;
+                    });
+                }
+            });
+            [DOMElements.standardAmount, DOMElements.supervisiRateWork, DOMElements.supervisiRateHoliday].forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const value = parseCurrency(e.target.value);
+                    e.target.value = formatForInputCurrency(value);
+                });
+            });
+            [DOMElements.supervisiStartDate, DOMElements.supervisiEndDate, DOMElements.supervisiRateWork, DOMElements.supervisiRateHoliday].forEach(el => {
+                el.addEventListener('input', calculateSupervisiTotal);
+            });
+            DOMElements.expenseCategoryInput.addEventListener('change', (e) => updateFormUI(e.target.value));
+            DOMElements.expenseForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const category = DOMElements.expenseCategoryInput.value;
+                const projectDate = parseDateFromInput(DOMElements.projectInfoFields.projectDate.value);
+
+                if (!category) return showModal('Input Kurang', 'Mohon pilih kategori pengajuan.');
+                if (!projectDate && category !== 'Uang Supervisi') return showModal('Input Kurang', 'Mohon isi "Tanggal Pengeluaran Uang" di Informasi Proyek terlebih dahulu.');
+
+                if (state.editingId) {
+                    state.expenses = state.expenses.filter(exp => (exp.groupId || exp.id) !== state.editingId);
+                }
+                if (category === 'Uang Supervisi') {
+                    const name = DOMElements.supervisiName.value.trim();
+                    const startDate = parseDateFromInput(DOMElements.supervisiStartDate.value);
+                    const endDate = parseDateFromInput(DOMElements.supervisiEndDate.value);
+                    if (!name || !startDate || !endDate) return showModal('Input Tidak Lengkap', 'Mohon lengkapi Nama Supervisi dan Periode Tanggal.');
+                    const { workCount, holidayCount, holidayDetails } = getDayCounts(new Date(`${startDate}T00:00:00`), new Date(`${endDate}T00:00:00`));
+                    const rateWork = parseCurrency(DOMElements.supervisiRateWork.value);
+                    const rateHoliday = parseCurrency(DOMElements.supervisiRateHoliday.value);
+                    const totalAmount = (workCount * rateWork) + (holidayCount * rateHoliday);
+                    if (totalAmount > 0) {
+                        const groupId = state.editingId || `group-${Date.now()}`;
+                        const additionalDesc = DOMElements.supervisiDescription.value.trim();
+                        const description = `Uang Supervisi ${name} (Kerja: ${workCount} hr, Libur: ${holidayCount} hr)${additionalDesc ? ` - ${additionalDesc}` : ''}`;
+                        state.expenses.push({ id: `exp-${Date.now()}`, groupId, isPeriod: true, date: startDate, endDate, description, amount: totalAmount, category: 'Uang Supervisi', details: { name, description: additionalDesc, rateWork, rateHoliday, workCount, holidayCount, holidayDetails } });
+                    }
+                } else {
+                    const description = DOMElements.standardDescription.value.trim();
+                    const amount = parseCurrency(DOMElements.standardAmount.value);
+                    if (!description || amount <= 0) return showModal('Input Tidak Lengkap', 'Mohon lengkapi Keterangan dan Jumlah.');
+                    state.expenses.push({ id: state.editingId || `exp-${Date.now()}`, isPeriod: false, date: projectDate, description, amount, category: category });
+                }
+                renderAll();
+                resetForm();
+            });
+            DOMElements.cancelEditBtn.addEventListener('click', resetForm);
             
-            downloadPDF() {
-                const element = document.getElementById('preview-container');
-                const quotation = this.saveQuotation(false);
-                const opt = {
-                    margin: 0,
-                    filename: `${quotation.number.replace(/\//g, '-')}.pdf`,
-                    image: { type: 'jpeg', quality: 0.98 },
-                    html2canvas: { scale: 2, useCORS: true },
-                    jsPDF: { unit: 'cm', format: 'a4', orientation: 'portrait' }
-                };
-                html2pdf().from(element).set(opt).save();
-            }
-        };
+            window.ppu_loadData = (data) => {
+                state.projectInfo = data.projectInfo;
+                state.expenses = data.expenses;
+                DOMElements.projectInfoFields.ppuNumberManual.value = data.projectInfo.ppuNumber.replace('PPU-', '');
+                renderAll();
+                showMainPage();
+                showNotification(`Data untuk ${data.projectInfo.ppuNumber} berhasil dimuat!`, 'success');
+            };
 
-        document.addEventListener('DOMContentLoaded', () => { app.init(); });
+            window.ppu_handleEdit = (id) => {
+                const expenseToEdit = state.expenses.find(exp => exp.id === id || exp.groupId === id);
+                if (!expenseToEdit) return;
+                state.editingId = id;
+                if (expenseToEdit.groupId) {
+                    const { details } = expenseToEdit;
+                    DOMElements.expenseCategoryInput.value = 'Uang Supervisi';
+                    updateFormUI('Uang Supervisi');
+                    DOMElements.supervisiName.value = details.name;
+                    DOMElements.supervisiStartDate.value = formatDateForInput(expenseToEdit.date);
+                    DOMElements.supervisiEndDate.value = formatDateForInput(expenseToEdit.endDate);
+                    DOMElements.supervisiDescription.value = details.description;
+                    DOMElements.supervisiRateWork.value = formatForInputCurrency(details.rateWork);
+                    DOMElements.supervisiRateHoliday.value = formatForInputCurrency(details.rateHoliday);
+                    calculateSupervisiTotal();
+                } else {
+                     const isStandardCat = Array.from(DOMElements.expenseCategoryInput.options).some(opt => opt.value === expenseToEdit.category);
+                    DOMElements.expenseCategoryInput.value = isStandardCat ? expenseToEdit.category : 'Lainnya';
+                    updateFormUI(DOMElements.expenseCategoryInput.value);
+                    DOMElements.projectInfoFields.projectDate.value = formatDateForInput(expenseToEdit.date); // Populate correct date input
+                    DOMElements.standardDescription.value = expenseToEdit.description;
+                    DOMElements.standardAmount.value = formatForInputCurrency(expenseToEdit.amount);
+                }
+                DOMElements.formTitle.textContent = 'Edit Rincian Pengajuan';
+                DOMElements.addExpenseBtn.innerHTML = '<i class="fas fa-save"></i>Simpan Perubahan';
+                DOMElements.cancelEditBtn.classList.remove('hidden');
+                DOMElements.expenseForm.scrollIntoView({ behavior: 'smooth' });
+            };
+            window.ppu_handleDelete = (id) => {
+                const expenseToDelete = state.expenses.find(exp => exp.id === id || exp.groupId === id);
+                if (!expenseToDelete) return;
+                const confirmMessage = expenseToDelete.groupId ? 'Ini akan menghapus seluruh entri supervisi terkait. Yakin?' : 'Apakah Anda yakin ingin menghapus rincian ini?';
+                showModal('Konfirmasi Hapus', confirmMessage, 'confirm', () => {
+                    state.expenses = state.expenses.filter(exp => (exp.groupId || exp.id) !== id);
+                    if (state.editingId === id) resetForm();
+                    renderAll();
+                });
+            };
+            DOMElements.previewProposalBtn.addEventListener('click', () => {
+                const manualPart = DOMElements.projectInfoFields.ppuNumberManual.value.trim();
+                state.projectInfo.ppuNumber = manualPart ? `PPU-${manualPart}` : 'PPU- (Belum Diisi)';
+
+                const totalProposal = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                const logoUrl = "https://raw.githubusercontent.com/krisandi89/rekap/main/LOGO%20MULTIBANGUN%20(Primary).png";
+                const sortedExpenses = [...state.expenses].sort((a, b) => new Date(a.date) - new Date(b.date));
+                const expenseRowsHTML = sortedExpenses.map((exp, index) => {
+                    let finalDescription;
+                    if (exp.category === 'Uang Supervisi' && exp.details) {
+                        const { name, workCount, holidayCount, description: additionalDesc, holidayDetails } = exp.details;
+                        const period = `periode ${formatDateForReport(exp.date)} - ${formatDateForReport(exp.endDate)}`;
+                        const counts = `(${workCount} hari kerja, ${holidayCount} hari libur)`;
+                        finalDescription = `Uang Supervisi ${name} ${period} ${counts}`;
+                        if (additionalDesc) finalDescription += ` - ${additionalDesc}`;
+                        if (holidayDetails?.length > 0) {
+                            const holidayList = holidayDetails.map(h => `<li>${formatDateForReport(h.date, {day: 'numeric', month: 'short'})}: ${h.name}</li>`).join('');
+                            finalDescription += `<br/><div style="font-size: 10px; color: #555; padding-left: 10px;">Ket. Libur:<ul style="margin: 0; padding-left: 15px;">${holidayList}</ul></div>`;
+                        }
+                    } else {
+                        finalDescription = exp.description;
+                    }
+                    const categoryTag = `<span class="category-tag">${exp.category}</span>`;
+                    return `<tr><td style="text-align: center;">${index + 1}</td><td>${finalDescription} ${categoryTag}</td><td style="text-align: right;">${formatToCurrency(exp.amount)}</td></tr>`;
+                }).join('');
+                const proposalDateFormatted = state.projectInfo.proposalDate ? formatDateForReport(state.projectInfo.proposalDate, { day: '2-digit', month: 'long', year: 'numeric' }) : new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' });
+                const reportHTML = `<!DOCTYPE html><html lang="id"><head><title>Proposal Pengajuan</title><style>@page{size: A4; margin: 0;} body{font-family: 'Segoe UI', sans-serif; margin:0;} .a4-container{width:210mm;min-height:297mm;margin:2rem auto;padding:1.5rem;box-shadow:0 0 10px rgba(0,0,0,0.1);background:white;border:1px solid #ddd;} table,th,td{border:1px solid black;border-collapse:collapse;} th,td{padding:8px;text-align:left;vertical-align:top;} .no-border-table,.no-border-table tr,.no-border-table td{border:none;padding:2px 4px;font-weight: 600;} .report-header{position:relative;text-align:center;padding-bottom:1rem;margin-bottom:1rem;border-bottom:2px solid black;} .report-header img{position:absolute;top:50%;transform:translateY(-50%);left:0;height:28px;} .report-header h1{margin:0;padding:0;line-height:28px; font-size: 1.25rem; font-weight: 700; text-transform: uppercase;} .category-tag { display: inline-block; background-color: #e9ecef; color: #495057; padding: 2px 8px; font-size: 10px; border-radius: 12px; margin-left: 8px; font-weight: 500; white-space: nowrap; vertical-align: middle; } @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;} .no-print{display:none !important;} .a4-container{margin:0;box-shadow:none;border:none;width:100%;min-height:0;padding:1.5cm;}}</style></head><body style="background-color: #e9ecef;"><div class="a4-container"><header class="report-header"><img src="${logoUrl}" alt="Logo"><h1>Pengajuan Pengeluaran Uang</h1></header><section style="margin-bottom: 1.5rem; font-size: 14px;"><table style="width: 100%;" class="no-border-table"><tr><td style="width: 25%;">Proyek</td><td>: ${formatTextForPreview(state.projectInfo.name)}</td></tr><tr><td style="width: 25%;">Lokasi</td><td>: ${formatTextForPreview(state.projectInfo.location)}</td></tr><tr><td style="width: 25%;">Kegiatan</td><td>: ${formatTextForPreview(state.projectInfo.activity)}</td></tr><tr><td style="width: 25%;">Personil</td><td>: ${formatTextForPreview(state.projectInfo.personnel)}</td></tr><tr><td style="width: 25%;">Tanggal Pengeluaran Uang</td><td>: ${formatDateForReport(state.projectInfo.projectDate, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) || '-'}</td></tr></table></section><section><table style="width: 100%; font-size: 14px;"><thead style="background-color: #f8f9fa;"><tr style="font-weight: 600; text-align: center;"><th style="width: 50px;">No.</th><th>Uraian</th><th style="width: 150px;">Jumlah (Rp)</th></tr></thead><tbody>${expenseRowsHTML || '<tr><td colspan="3" style="text-align: center; padding: 2rem; color: #6c757d;">Tidak ada data.</td></tr>'}</tbody><tfoot><tr style="font-weight: 600; background-color: #f8f9fa;"><td colspan="2" style="text-align: center;">Total Diajukan</td><td style="text-align: right; font-weight: 700;">${formatToCurrency(totalProposal)}</td></tr></tfoot></table></section><footer style="margin-top: 4rem; display: flex; justify-content: flex-end; font-size: 14px;"><div style="text-align: center;"><p>${formatTextForPreview(state.projectInfo.applicantLocation)}, ${proposalDateFormatted}</p><p style="margin-bottom: 4rem;">Yang mengajukan,</p><p style="font-weight: 600; text-decoration: underline;">${formatTextForPreview(state.projectInfo.applicant)}</p></div></footer></div><div class="no-print" style="text-align: center; padding: 1rem;"><button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i>Cetak</button><button onclick="window.close()" class="btn btn-secondary" style="margin-left: 8px;"><i class="fas fa-times"></i>Tutup</button></div></body></html>`;
+                const reportWindow = window.open('', '_blank');
+                reportWindow.document.write(reportHTML);
+                reportWindow.document.close();
+            });
+            const flatpickrConfig = { dateFormat: "d/m/Y", locale: "id" };
+            flatpickr(`#${prefix}proposal-date`, flatpickrConfig);
+            flatpickr(`#${prefix}project-date`, flatpickrConfig);
+            flatpickr(`#${prefix}supervisi-start-date`, flatpickrConfig);
+            flatpickr(`#${prefix}supervisi-end-date`, flatpickrConfig);
+            
+            renderAll();
+            resetForm(); // Ensure form is reset on init
+        }
+        
+        // --- REKAP APP SCRIPT ---
+        function initRekapApp() {
+            const prefix = 'rekap-';
+            const DOMElements = {
+                openPpuListBtn: document.getElementById(`${prefix}open-ppu-list-btn`),
+                openRekapListBtn: document.getElementById(`${prefix}open-rekap-list-btn`),
+                resetBtn: document.getElementById(`${prefix}reset-btn`),
+                saveBtn: document.getElementById(`${prefix}save-btn`),
+                projectInfoFields: { name: document.getElementById(`${prefix}project-name`), location: document.getElementById(`${prefix}project-location`), personnel: document.getElementById(`${prefix}project-personnel`), activity: document.getElementById(`${prefix}project-activity`), applicant: document.getElementById(`${prefix}project-applicant`), applicantLocation: document.getElementById(`${prefix}project-applicant-location`), rekapNumberManual: document.getElementById(`${prefix}number-manual`) },
+                initialBudgetInput: document.getElementById(`${prefix}initial-budget`),
+                budgetDateInput: document.getElementById(`${prefix}budget-date`),
+                setBudgetBtn: document.getElementById(`${prefix}set-budget-btn`),
+                summaryBudget: document.getElementById(`${prefix}summary-budget`),
+                summaryExpenses: document.getElementById(`${prefix}summary-expenses`),
+                summaryBalance: document.getElementById(`${prefix}summary-balance`),
+                expenseForm: document.getElementById(`${prefix}expense-form`),
+                formTitle: document.getElementById(`${prefix}form-title`),
+                expenseIdInput: document.getElementById(`${prefix}expense-id`),
+                expenseCategoryInput: document.getElementById(`${prefix}expense-category`),
+                addExpenseBtn: document.getElementById(`${prefix}add-expense-btn`),
+                cancelEditBtn: document.getElementById(`${prefix}cancel-edit-btn`),
+                expenseTableBody: document.getElementById(`${prefix}expense-table-body`),
+                noDataMessage: document.getElementById(`${prefix}no-data-message`),
+                previewReportBtn: document.getElementById(`${prefix}preview-report-btn`),
+                standardInputs: document.getElementById(`${prefix}standard-inputs`),
+                supervisiInputs: document.getElementById(`${prefix}supervisi-inputs`),
+                standardDate: document.getElementById(`${prefix}standard-date`),
+                standardDescription: document.getElementById(`${prefix}standard-description`),
+                standardDescriptionLabel: document.getElementById(`${prefix}standard-description-label`),
+                standardAmount: document.getElementById(`${prefix}standard-amount`),
+                supervisiName: document.getElementById(`${prefix}supervisi-name`),
+                supervisiStartDate: document.getElementById(`${prefix}supervisi-start-date`),
+                supervisiEndDate: document.getElementById(`${prefix}supervisi-end-date`),
+                supervisiRateWork: document.getElementById(`${prefix}supervisi-rate-work`),
+                supervisiRateHoliday: document.getElementById(`${prefix}supervisi-rate-holiday`),
+                supervisiDayCountWork: document.getElementById(`${prefix}supervisi-day-count-work`),
+                supervisiDayCountHoliday: document.getElementById(`${prefix}supervisi-day-count-holiday`),
+                supervisiDescription: document.getElementById(`${prefix}supervisi-description`),
+                supervisiTotalAmount: document.getElementById(`${prefix}supervisi-total-amount`)
+            };
+            let state = { projectInfo: {}, budget: { amount: 0, date: '' }, expenses: [], editingId: null };
+
+            const saveRekapData = async () => {
+                const manualPart = DOMElements.projectInfoFields.rekapNumberManual.value.trim();
+                if (!manualPart) {
+                    showModal('Input Kurang', 'Nomor Rekap wajib diisi.');
+                    return;
+                }
+                state.projectInfo.rekapNumber = `REKAP-${manualPart}`;
+                
+                showNotification('Menyimpan data Rekap...', 'info');
+                const originalBtnHtml = DOMElements.saveBtn.innerHTML;
+                DOMElements.saveBtn.disabled = true;
+                DOMElements.saveBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>Menyimpan...`;
+
+                try {
+                    const response = await fetch('/api/simpanRekap', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            data: state,
+                            username: localStorage.getItem('loggedInUser')
+                        })
+                    });
+                    const result = await response.json();
+                    if (response.ok && result.success) {
+                        showNotification('Data Rekap berhasil disimpan!', 'success');
+                    } else {
+                        throw new Error(result.message || 'Gagal menyimpan data.');
+                    }
+                } catch (e) { 
+                    console.error("Error saving Rekap to Vercel: ", e); 
+                    showNotification(e.message, 'error');
+                } finally {
+                    DOMElements.saveBtn.disabled = false;
+                    DOMElements.saveBtn.innerHTML = `<i class="fas fa-save"></i>Simpan`;
+                }
+            };
+            
+            const resetRekap = () => {
+                state = { projectInfo: {}, budget: { amount: 0, date: '' }, expenses: [], editingId: null };
+                DOMElements.projectInfoFields.rekapNumberManual.value = '';
+                renderAll();
+                resetForm();
+                showNotification('Formulir Rekap telah dibersihkan.', 'info');
+            };
+
+            window.rekap_loadData = (data) => {
+                state = data;
+                DOMElements.projectInfoFields.rekapNumberManual.value = data.projectInfo.rekapNumber.replace('REKAP-', '');
+                renderAll();
+                showMainPage();
+                showNotification(`Data untuk ${data.projectInfo.rekapNumber} berhasil dimuat!`, 'success');
+            };
+
+            window.rekap_selectPpu = (data) => {
+                resetRekap();
+                const { projectInfo, expenses } = data;
+                const totalProposal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                state.projectInfo = { ...projectInfo };
+                delete state.projectInfo.ppuNumber; // Hapus nomor PPU agar tidak tercampur
+                state.budget.amount = totalProposal;
+                state.budget.date = projectInfo.proposalDate || new Date().toISOString().slice(0, 10);
+                renderAll();
+                showNotification(`Data dari ${projectInfo.ppuNumber} berhasil ditarik!`, 'success');
+                showMainPage();
+            };
+            
+            DOMElements.openPpuListBtn.addEventListener('click', () => showPpuListPage('rekap'));
+            DOMElements.openRekapListBtn.addEventListener('click', () => showRekapListPage());
+            DOMElements.saveBtn.addEventListener('click', saveRekapData);
+            DOMElements.resetBtn.addEventListener('click', resetRekap);
+            
+            const calculateSupervisiTotal = () => {
+                const startDateStr = parseDateFromInput(DOMElements.supervisiStartDate.value);
+                const endDateStr = parseDateFromInput(DOMElements.supervisiEndDate.value);
+                if (!startDateStr || !endDateStr) {
+                    DOMElements.supervisiDayCountWork.value = `0 hr kerja`;
+                    DOMElements.supervisiDayCountHoliday.value = `0 hr libur`;
+                    DOMElements.supervisiTotalAmount.value = '';
+                    return;
+                }
+                const startDate = new Date(`${startDateStr}T00:00:00`);
+                const endDate = new Date(`${endDateStr}T00:00:00`);
+                const { workCount, holidayCount } = getDayCounts(startDate, endDate);
+                DOMElements.supervisiDayCountWork.value = `${workCount} hr kerja`;
+                DOMElements.supervisiDayCountHoliday.value = `${holidayCount} hr libur`;
+                const rateWork = parseCurrency(DOMElements.supervisiRateWork.value);
+                const rateHoliday = parseCurrency(DOMElements.supervisiRateHoliday.value);
+                const total = (workCount * rateWork) + (holidayCount * rateHoliday);
+                DOMElements.supervisiTotalAmount.value = formatForInputCurrency(total);
+            };
+            const renderSummary = () => {
+                const totalExpenses = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                const balance = state.budget.amount - totalExpenses;
+                DOMElements.summaryBudget.textContent = formatToCurrency(state.budget.amount);
+                DOMElements.summaryExpenses.textContent = formatToCurrency(totalExpenses);
+                DOMElements.summaryBalance.textContent = formatToCurrency(balance);
+                DOMElements.summaryBalance.style.color = balance < 0 ? 'var(--danger)' : '#14b8a6';
+            };
+            const renderTable = () => {
+                 DOMElements.expenseTableBody.innerHTML = '';
+                const hasExpenses = state.expenses.length > 0;
+                DOMElements.noDataMessage.style.display = hasExpenses ? 'none' : 'table-row';
+                if (hasExpenses) {
+                    [...state.expenses].sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(exp => {
+                        const row = DOMElements.expenseTableBody.insertRow();
+                        row.style.borderBottom = '1px solid #e9ecef';
+                        row.insertCell().textContent = exp.isPeriod ? `${formatDateForReport(exp.date)} - ${formatDateForReport(exp.endDate)}` : formatDateForReport(exp.date);
+                        let descriptionHtml = exp.description;
+                        if (exp.category === 'Uang Supervisi' && exp.details?.holidayDetails?.length > 0) {
+                            const holidayList = exp.details.holidayDetails.map(h => `<li>${formatDateForReport(h.date, {day: 'numeric', month: 'short'})}: ${h.name}</li>`).join('');
+                            descriptionHtml += `<ul style="font-size: 12px; color: var(--gray); margin-top: 4px; padding-left: 20px;">Ket. Libur:${holidayList}</ul>`;
+                        }
+                        row.insertCell().innerHTML = descriptionHtml;
+                        row.insertCell().innerHTML = `<span style="padding: 4px 8px; font-size: 12px; font-weight: 500; border-radius: 12px; background-color: #e9ecef; color: #495057; white-space: nowrap;">${exp.category}</span>`;
+                        row.insertCell().textContent = formatToCurrency(exp.amount);
+                        const actionId = exp.groupId || exp.id;
+                        row.insertCell().innerHTML = `<button onclick="window.rekap_handleEdit('${actionId}')" title="Edit" style="color: var(--primary);"><i class="fas fa-pencil-alt"></i></button><button onclick="window.rekap_handleDelete('${actionId}')" title="Hapus" style="color: var(--danger); margin-left: 8px;"><i class="fas fa-trash-alt"></i></button>`;
+
+                        Array.from(row.cells).forEach(cell => cell.style.padding = '12px');
+                        row.cells[3].style.textAlign = 'right';
+                        row.cells[4].style.textAlign = 'center';
+
+                    });
+                }
+            };
+            const renderProjectInfo = () => {
+                for (const key in DOMElements.projectInfoFields) {
+                    const field = DOMElements.projectInfoFields[key];
+                    if(field && key !== 'rekapNumberManual') field.value = state.projectInfo[key] || '';
+                }
+            };
+            const renderBudget = () => {
+                const hasBudget = state.budget.amount > 0;
+                DOMElements.initialBudgetInput.value = formatForInputCurrency(state.budget.amount);
+                DOMElements.budgetDateInput.value = formatDateForInput(state.budget.date);
+                DOMElements.initialBudgetInput.disabled = hasBudget;
+                DOMElements.budgetDateInput.disabled = hasBudget;
+                DOMElements.setBudgetBtn.innerHTML = hasBudget ? '<i class="fas fa-edit"></i>Ubah Budget' : '<i class="fas fa-save"></i>Atur Budget';
+            };
+            const renderAll = () => {
+                renderProjectInfo();
+                renderBudget();
+                renderSummary();
+                renderTable();
+            };
+            const updateFormUI = (category) => {
+                DOMElements.standardInputs.classList.add('hidden');
+                DOMElements.supervisiInputs.classList.add('hidden');
+                DOMElements.standardDescriptionLabel.textContent = '3. Keterangan';
+                DOMElements.standardDescription.placeholder = 'Detail pengeluaran';
+                if (category === 'Uang Supervisi') {
+                    DOMElements.supervisiInputs.classList.remove('hidden');
+                    calculateSupervisiTotal();
+                } else if (category) {
+                    DOMElements.standardInputs.classList.remove('hidden');
+                    if(category === 'Lainnya') {
+                         DOMElements.standardDescriptionLabel.textContent = '3. Ketik Kategori & Keterangan';
+                         DOMElements.standardDescription.placeholder = 'Contoh: Biaya Cetak Dokumen Proyek';
+                    }
+                }
+            };
+            const resetForm = () => {
+                DOMElements.expenseForm.reset();
+                state.editingId = null;
+                DOMElements.formTitle.textContent = 'Tambah Pengeluaran Baru';
+                DOMElements.addExpenseBtn.innerHTML = '<i class="fas fa-plus"></i>Tambah';
+                DOMElements.cancelEditBtn.classList.add('hidden');
+                updateFormUI('');
+                DOMElements.standardDate.value = formatDateForInput(new Date().toISOString().slice(0, 10));
+            };
+            Object.keys(DOMElements.projectInfoFields).forEach(key => {
+                const field = DOMElements.projectInfoFields[key];
+                if(field && key !== 'rekapNumberManual') {
+                     field.addEventListener('blur', (e) => { state.projectInfo[key] = e.target.value; });
+                }
+            });
+            [DOMElements.initialBudgetInput, DOMElements.standardAmount, DOMElements.supervisiRateWork, DOMElements.supervisiRateHoliday].forEach(input => {
+                input.addEventListener('input', (e) => {
+                    const value = parseCurrency(e.target.value);
+                    e.target.value = formatForInputCurrency(value);
+                });
+            });
+            DOMElements.setBudgetBtn.addEventListener('click', () => {
+                if (DOMElements.initialBudgetInput.disabled) {
+                    DOMElements.initialBudgetInput.disabled = false;
+                    DOMElements.budgetDateInput.disabled = false;
+                    DOMElements.setBudgetBtn.innerHTML = '<i class="fas fa-save"></i>Simpan Perubahan';
+                    DOMElements.initialBudgetInput.focus();
+                } else {
+                    const amount = parseCurrency(DOMElements.initialBudgetInput.value);
+                    const date = parseDateFromInput(DOMElements.budgetDateInput.value);
+                    if (amount > 0 && date) {
+                        state.budget = { amount, date };
+                        renderAll();
+                    } else {
+                        showModal('Input Tidak Valid', 'Mohon isi jumlah budget dan tanggal (dd/mm/yyyy) dengan benar.');
+                    }
+                }
+            });
+            [DOMElements.supervisiStartDate, DOMElements.supervisiEndDate, DOMElements.supervisiRateWork, DOMElements.supervisiRateHoliday].forEach(el => {
+                el.addEventListener('input', calculateSupervisiTotal);
+            });
+            DOMElements.expenseCategoryInput.addEventListener('change', (e) => updateFormUI(e.target.value));
+            DOMElements.expenseForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const category = DOMElements.expenseCategoryInput.value;
+                if (!category) return showModal('Input Kurang', 'Mohon pilih kategori pengeluaran.');
+                if (state.editingId) {
+                    state.expenses = state.expenses.filter(exp => (exp.groupId || exp.id) !== state.editingId);
+                }
+                if (category === 'Uang Supervisi') {
+                    const name = DOMElements.supervisiName.value.trim();
+                    const startDate = parseDateFromInput(DOMElements.supervisiStartDate.value);
+                    const endDate = parseDateFromInput(DOMElements.supervisiEndDate.value);
+                    if (!name || !startDate || !endDate) return showModal('Input Tidak Lengkap', 'Mohon lengkapi Nama Supervisi dan Periode Tanggal.');
+                    const { workCount, holidayCount, holidayDetails } = getDayCounts(new Date(`${startDate}T00:00:00`), new Date(`${endDate}T00:00:00`));
+                    const rateWork = parseCurrency(DOMElements.supervisiRateWork.value);
+                    const rateHoliday = parseCurrency(DOMElements.supervisiRateHoliday.value);
+                    const totalAmount = (workCount * rateWork) + (holidayCount * rateHoliday);
+                    if (totalAmount > 0) {
+                        const groupId = state.editingId || `group-${Date.now()}`;
+                        const additionalDesc = DOMElements.supervisiDescription.value.trim();
+                        const description = `Uang Supervisi ${name} (Kerja: ${workCount} hr, Libur: ${holidayCount} hr)${additionalDesc ? ` - ${additionalDesc}` : ''}`;
+                        state.expenses.push({ id: `exp-${Date.now()}`, groupId, isPeriod: true, date: startDate, endDate, description, amount: totalAmount, category: 'Uang Supervisi', details: { name, description: additionalDesc, rateWork, rateHoliday, workCount, holidayCount, holidayDetails } });
+                    }
+                } else {
+                    const description = DOMElements.standardDescription.value.trim();
+                    const amount = parseCurrency(DOMElements.standardAmount.value);
+                    const date = parseDateFromInput(DOMElements.standardDate.value);
+                    if (!date || !description || amount <= 0) return showModal('Input Tidak Lengkap', 'Mohon lengkapi Tanggal, Keterangan, dan Jumlah.');
+                    state.expenses.push({ id: state.editingId || `exp-${Date.now()}`, isPeriod: false, date, description, amount, category: category });
+                }
+                
+                renderSummary();
+                renderTable();
+                resetForm();
+            });
+            DOMElements.cancelEditBtn.addEventListener('click', resetForm);
+            window.rekap_handleEdit = (id) => {
+                 const expenseToEdit = state.expenses.find(exp => exp.id === id || exp.groupId === id);
+                if (!expenseToEdit) return;
+                state.editingId = id;
+                if (expenseToEdit.groupId) {
+                    const { details } = expenseToEdit;
+                    DOMElements.expenseCategoryInput.value = 'Uang Supervisi';
+                    updateFormUI('Uang Supervisi');
+                    DOMElements.supervisiName.value = details.name;
+                    DOMElements.supervisiStartDate.value = formatDateForInput(expenseToEdit.date);
+                    DOMElements.supervisiEndDate.value = formatDateForInput(expenseToEdit.endDate);
+                    DOMElements.supervisiDescription.value = details.description;
+                    DOMElements.supervisiRateWork.value = formatForInputCurrency(details.rateWork);
+                    DOMElements.supervisiRateHoliday.value = formatForInputCurrency(details.rateHoliday);
+                    calculateSupervisiTotal();
+                } else {
+                     const isStandardCat = Array.from(DOMElements.expenseCategoryInput.options).some(opt => opt.value === expenseToEdit.category);
+                    DOMElements.expenseCategoryInput.value = isStandardCat ? expenseToEdit.category : 'Lainnya';
+                    updateFormUI(DOMElements.expenseCategoryInput.value);
+                    DOMElements.standardDate.value = formatDateForInput(expenseToEdit.date);
+                    DOMElements.standardDescription.value = expenseToEdit.description;
+                    DOMElements.standardAmount.value = formatForInputCurrency(expenseToEdit.amount);
+                }
+                DOMElements.formTitle.textContent = 'Edit Data Pengeluaran';
+                DOMElements.addExpenseBtn.innerHTML = '<i class="fas fa-save"></i>Simpan Perubahan';
+                DOMElements.cancelEditBtn.classList.remove('hidden');
+                DOMElements.expenseForm.scrollIntoView({ behavior: 'smooth' });
+            };
+            window.rekap_handleDelete = (id) => {
+                const expenseToDelete = state.expenses.find(exp => exp.id === id || exp.groupId === id);
+                if (!expenseToDelete) return;
+                const confirmMessage = expenseToDelete.groupId ? 'Ini akan menghapus seluruh entri supervisi terkait. Yakin?' : 'Apakah Anda yakin ingin menghapus data ini?';
+                showModal('Konfirmasi Hapus', confirmMessage, 'confirm', () => {
+                    state.expenses = state.expenses.filter(exp => (exp.groupId || exp.id) !== id);
+                    if (state.editingId === id) resetForm();
+                    renderAll();
+                });
+            };
+            DOMElements.previewReportBtn.addEventListener('click', () => {
+                const totalExpenses = state.expenses.reduce((sum, exp) => sum + exp.amount, 0);
+                const balance = state.budget.amount - totalExpenses;
+                const logoUrl = "https://raw.githubusercontent.com/krisandi89/rekap/main/LOGO%20MULTIBANGUN%20(Primary).png";
+                const sortedExpenses = [...state.expenses].sort((a, b) => new Date(a.date) - new Date(b.date));
+                const expenseRowsHTML = sortedExpenses.map((exp, index) => {
+                    let finalDescription;
+                    if (exp.category === 'Uang Supervisi' && exp.details) {
+                        const { name, workCount, holidayCount, description: additionalDesc, holidayDetails } = exp.details;
+                        const period = `periode ${formatDateForReport(exp.date)} - ${formatDateForReport(exp.endDate)}`;
+                        const counts = `(${workCount} hari kerja, ${holidayCount} hari libur)`;
+                        finalDescription = `Uang Supervisi ${name} ${period} ${counts}`;
+                        if (additionalDesc) finalDescription += ` - ${additionalDesc}`;
+                        if (holidayDetails?.length > 0) {
+                            const holidayList = holidayDetails.map(h => `<li>${formatDateForReport(h.date, {day: 'numeric', month: 'short'})}: ${h.name}</li>`).join('');
+                            finalDescription += `<br/><div style="font-size: 10px; color: #555; padding-left: 10px;">Ket. Libur:<ul style="margin: 0; padding-left: 15px;">${holidayList}</ul></div>`;
+                        }
+                    } else {
+                        finalDescription = `${formatDateForReport(exp.date)} - ${exp.description}`;
+                    }
+                    const categoryTag = `<span class="category-tag">${exp.category}</span>`;
+                    return `<tr><td style="text-align: center;">${index + 2}</td><td>${finalDescription} ${categoryTag}</td><td style="text-align: right;">-</td><td style="text-align: right;">${formatToCurrency(exp.amount)}</td></tr>`;
+                }).join('');
+                const reportHTML = `<!DOCTYPE html><html lang="id"><head><title>Laporan Pengeluaran</title><style>body{font-family:'Segoe UI',sans-serif;}.a4-container{width:210mm;min-height:297mm;margin:2rem auto;padding:1.5rem;box-shadow:0 0 10px rgba(0,0,0,0.1);background:white;border:1px solid #ddd;}table,th,td{border:1px solid black;border-collapse:collapse;}th,td{padding:8px;text-align:left;vertical-align:top;}.no-border-table,.no-border-table tr,.no-border-table td{border:none;padding:2px 4px;}.report-header{position:relative;text-align:center;padding-bottom:1rem;margin-bottom:1rem;border-bottom:2px solid black;}.report-header img{position:absolute;top:50%;transform:translateY(-50%);left:0;height:28px;}.report-header h1{margin:0;padding:0;line-height:28px;} .category-tag { display: inline-block; background-color: #e9ecef; color: #495057; padding: 2px 8px; font-size: 10px; border-radius: 12px; margin-left: 8px; font-weight: 500; white-space: nowrap; vertical-align: middle; } @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;margin:0;}.no-print{display:none !important;}.a4-container{margin:0;box-shadow:none;border:none;}}</style></head><body style="background-color: #e9ecef;"><div class="a4-container"><header class="report-header"><img src="${logoUrl}" alt="Logo"><h1 style="font-size: 1.25rem; font-weight: 700; text-transform: uppercase;">Rekapitulasi Pengeluaran Uang</h1></header><section style="margin-bottom: 1.5rem; font-size: 14px;"><table style="width: 100%;" class="no-border-table"><tr><td style="width: 25%; font-weight: 600;">Proyek</td><td>: ${formatTextForPreview(state.projectInfo.name)}</td></tr><tr><td style="width: 25%; font-weight: 600;">Lokasi</td><td>: ${formatTextForPreview(state.projectInfo.location)}</td></tr><tr><td style="width: 25%; font-weight: 600;">Kegiatan</td><td>: ${formatTextForPreview(state.projectInfo.activity)}</td></tr><tr><td style="width: 25%; font-weight: 600;">Personil</td><td>: ${formatTextForPreview(state.projectInfo.personnel)}</td></tr></table></section><section><table style="width: 100%; font-size: 14px;"><thead style="background-color: #f8f9fa;"><tr style="font-weight: 600; text-align: center;"><th style="width: 50px;">No.</th><th>Uraian</th><th style="width: 150px;">Debet</th><th style="width: 150px;">Kredit</th></tr></thead><tbody><tr><td style="text-align: center;">1</td><td>Uang Diterima Tgl ${formatDateForReport(state.budget.date)}</td><td style="text-align: right;">${formatToCurrency(state.budget.amount)}</td><td style="text-align: right;">-</td></tr>${expenseRowsHTML}</tbody><tfoot><tr style="font-weight: 600; background-color: #f8f9fa;"><td colspan="2" style="text-align: center;">Total</td><td style="text-align: right;">${formatToCurrency(state.budget.amount)}</td><td style="text-align: right;">${formatToCurrency(totalExpenses)}</td></tr><tr style="font-weight: 600; background-color: #f8f9fa;"><td colspan="2" style="text-align: center;">Balanced</td><td style="text-align: right; font-weight: 700;" colspan="2">${formatToCurrency(balance)}</td></tr></tfoot></table></section><footer style="margin-top: 4rem; display: flex; justify-content: flex-end; font-size: 14px;"><div style="text-align: center;"><p>${formatTextForPreview(state.projectInfo.applicantLocation)}, ${new Date().toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' })}</p><p style="margin-bottom: 4rem;">Yang mengajukan,</p><p style="font-weight: 600; text-decoration: underline;">${formatTextForPreview(state.projectInfo.applicant)}</p></div></footer></div><div class="no-print" style="text-align: center; padding: 1rem;"><button onclick="window.print()" class="btn btn-primary"><i class="fas fa-print"></i>Cetak</button><button onclick="window.close()" class="btn btn-secondary" style="margin-left: 8px;"><i class="fas fa-times"></i>Tutup</button></div></body></html>`;
+                const reportWindow = window.open('', '_blank');
+                reportWindow.document.write(reportHTML);
+                reportWindow.document.close();
+            });
+            const flatpickrConfig = { dateFormat: "d/m/Y", locale: "id" };
+            flatpickr(`#${prefix}budget-date`, flatpickrConfig);
+            flatpickr(`#${prefix}standard-date`, flatpickrConfig);
+            flatpickr(`#${prefix}supervisi-start-date`, flatpickrConfig);
+            flatpickr(`#${prefix}supervisi-end-date`, flatpickrConfig);
+            
+            resetForm(); // Ensure form is reset on init
+        }
     </script>
 </body>
 </html>
