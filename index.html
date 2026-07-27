@@ -422,6 +422,7 @@
         }
 
         function showPpuListPage(targetApp = 'ppu') {
+            currentPpuTargetApp = targetApp;
             document.getElementById('page-app').classList.remove('active');
             document.getElementById('page-ppu-list').classList.add('active');
             document.getElementById('page-rekap-list').classList.remove('active');
@@ -562,6 +563,7 @@
         // --- GLOBAL DATA LIST MANAGEMENT ---
         let allPpuData = [];
         let allRekapData = [];
+        let currentPpuTargetApp = 'ppu';
 
         async function global_handleDelete(event, number, type) {
             event.stopPropagation();
@@ -590,7 +592,7 @@
                     showNotification(`${type.toUpperCase()} berhasil dihapus.`, 'success');
                     if (type === 'ppu') {
                         allPpuData = allPpuData.filter(d => d.projectInfo.ppuNumber !== number);
-                        renderPpuList(document.getElementById('ppu-list-search').value);
+                        renderPpuList(document.getElementById('ppu-list-search').value, currentPpuTargetApp);
                     } else {
                         allRekapData = allRekapData.filter(d => d.projectInfo.rekapNumber !== number);
                         renderRekapList(document.getElementById('rekap-list-search').value);
@@ -602,7 +604,8 @@
             });
         }
 
-        function renderPpuList(filter = '', targetApp = 'ppu') {
+        function renderPpuList(filter = '', targetApp) {
+            targetApp = targetApp || currentPpuTargetApp;
             const container = document.getElementById('ppu-list-container');
             container.innerHTML = '';
             const searchTerm = filter.toUpperCase();
@@ -799,7 +802,7 @@
             await fetchHolidays();
             initPPUApp();
             initRekapApp();
-            document.getElementById('ppu-list-search').addEventListener('input', (e) => renderPpuList(e.target.value));
+            document.getElementById('ppu-list-search').addEventListener('input', (e) => renderPpuList(e.target.value, currentPpuTargetApp));
             document.getElementById('rekap-list-search').addEventListener('input', (e) => renderRekapList(e.target.value));
             
             Sortable.create(document.getElementById('ppu-list-container'), {
@@ -895,6 +898,12 @@
             let state = { projectInfo: {}, expenses: [] };
 
             const saveDataToVercel = async () => {
+                Object.keys(DOMElements.projectInfoFields).forEach(key => {
+                    const field = DOMElements.projectInfoFields[key];
+                    if (field && key !== 'ppuNumberManual') {
+                        state.projectInfo[key] = (key === 'projectDate' || key === 'proposalDate') ? parseDateFromInput(field.value) || '' : field.value;
+                    }
+                });
                 const manualPart = DOMElements.projectInfoFields.ppuNumberManual.value.trim();
                 if (!manualPart) {
                     showModal('Input Kurang', 'Nomor PPU wajib diisi.');
@@ -1039,9 +1048,11 @@
             Object.keys(DOMElements.projectInfoFields).forEach(key => {
                 const field = DOMElements.projectInfoFields[key];
                 if(field && key !== 'ppuNumberManual') {
-                    field.addEventListener('blur', (e) => {
+                    const updateField = (e) => {
                         state.projectInfo[key] = (key === 'projectDate' || key === 'proposalDate') ? parseDateFromInput(e.target.value) || '' : e.target.value;
-                    });
+                    };
+                    field.addEventListener('blur', updateField);
+                    field.addEventListener('input', updateField);
                 }
             });
             [DOMElements.standardAmount, DOMElements.supervisiRateWork, DOMElements.supervisiRateHoliday].forEach(input => {
@@ -1097,6 +1108,7 @@
                 DOMElements.projectInfoFields.ppuNumberManual.value = data.projectInfo.ppuNumber.replace('PPU-', '');
                 renderAll();
                 showMainPage();
+                changeAppTab('ppu');
                 showNotification(`Data untuk ${data.projectInfo.ppuNumber} berhasil dimuat!`, 'success');
             };
 
@@ -1232,6 +1244,12 @@
             let state = { projectInfo: {}, budget: { amount: 0, date: '' }, expenses: [], editingId: null };
 
             const saveRekapData = async () => {
+                Object.keys(DOMElements.projectInfoFields).forEach(key => {
+                    const field = DOMElements.projectInfoFields[key];
+                    if (field && key !== 'rekapNumberManual') {
+                        state.projectInfo[key] = field.value;
+                    }
+                });
                 const manualPart = DOMElements.projectInfoFields.rekapNumberManual.value.trim();
                 if (!manualPart) {
                     showModal('Input Kurang', 'Nomor Rekap wajib diisi.');
@@ -1281,6 +1299,7 @@
                 DOMElements.projectInfoFields.rekapNumberManual.value = data.projectInfo.rekapNumber.replace('REKAP-', '');
                 renderAll();
                 showMainPage();
+                changeAppTab('rekap');
                 showNotification(`Data untuk ${data.projectInfo.rekapNumber} berhasil dimuat!`, 'success');
             };
 
@@ -1293,8 +1312,9 @@
                 state.budget.amount = totalProposal;
                 state.budget.date = projectInfo.proposalDate || new Date().toISOString().slice(0, 10);
                 renderAll();
-                showNotification(`Data dari ${projectInfo.ppuNumber} berhasil ditarik!`, 'success');
                 showMainPage();
+                changeAppTab('rekap');
+                showNotification(`Data dari ${projectInfo.ppuNumber} berhasil ditarik!`, 'success');
             };
             
             DOMElements.openPpuListBtn.addEventListener('click', () => showPpuListPage('rekap'));
@@ -1404,7 +1424,9 @@
             Object.keys(DOMElements.projectInfoFields).forEach(key => {
                 const field = DOMElements.projectInfoFields[key];
                 if(field && key !== 'rekapNumberManual') {
-                     field.addEventListener('blur', (e) => { state.projectInfo[key] = e.target.value; });
+                     const updateField = (e) => { state.projectInfo[key] = e.target.value; };
+                     field.addEventListener('blur', updateField);
+                     field.addEventListener('input', updateField);
                 }
             });
             [DOMElements.initialBudgetInput, DOMElements.standardAmount, DOMElements.supervisiRateWork, DOMElements.supervisiRateHoliday].forEach(input => {
