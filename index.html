@@ -230,6 +230,111 @@
             background-color: #2d2d2d !important;
             color: #adb5bd !important;
         }
+
+        /* PPU & Rekap List Toolbar & Status Badges */
+        .list-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .list-controls-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .filter-pills-group {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+        }
+        .filter-pill-btn {
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            color: #475569;
+            padding: 6px 14px;
+            border-radius: 9999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .filter-pill-btn:hover {
+            background: #e2e8f0;
+            transform: translateY(-1px);
+        }
+        .filter-pill-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+            box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+        }
+        .filter-pill-count {
+            background: rgba(0, 0, 0, 0.08);
+            padding: 1px 7px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+        }
+        .filter-pill-btn.active .filter-pill-count {
+            background: rgba(255, 255, 255, 0.25);
+            color: white;
+        }
+        .badge-rekap-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .badge-rekap-status:hover {
+            transform: scale(1.04);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .badge-rekap-done {
+            border: 1px solid #10b981;
+            background: #ecfdf5;
+            color: #065f46;
+        }
+        .badge-rekap-pending {
+            border: 1px solid #f59e0b;
+            background: #fffbeb;
+            color: #92400e;
+        }
+        body.dark-mode .filter-pill-btn {
+            background-color: #2d2d2d;
+            border-color: #444;
+            color: #e0e0e0;
+        }
+        body.dark-mode .filter-pill-btn:hover {
+            background-color: #3d3d3d;
+        }
+        body.dark-mode .filter-pill-btn.active {
+            background-color: var(--primary);
+            color: white;
+        }
+        body.dark-mode .badge-rekap-done {
+            background-color: rgba(16, 185, 129, 0.18);
+            color: #34d399;
+            border-color: #059669;
+        }
+        body.dark-mode .badge-rekap-pending {
+            background-color: rgba(245, 158, 11, 0.18);
+            color: #fbbf24;
+            border-color: #d97706;
+        }
     </style>
 </head>
 <body>
@@ -291,8 +396,34 @@
                 <h1 style="font-size: 28px; font-weight: 700;">Daftar PPU Tersimpan</h1>
                 <button onclick="showMainPage()" class="btn btn-secondary"><i class="fas fa-times mr-2"></i>Tutup</button>
             </header>
-            <div class="card" style="margin-bottom: 25px;">
-                <input type="text" id="ppu-list-search" class="form-input" placeholder="Cari berdasarkan Nomor PPU, Proyek, atau Lokasi...">
+            <div class="card list-toolbar">
+                <div>
+                    <input type="text" id="ppu-list-search" class="form-input" placeholder="Cari berdasarkan Nomor PPU, Proyek, atau Lokasi...">
+                </div>
+                <div class="list-controls-row">
+                    <div class="filter-pills-group">
+                        <span style="font-size: 13px; font-weight: 600; color: var(--gray); margin-right: 2px;"><i class="fas fa-filter" style="margin-right: 4px;"></i>Status:</span>
+                        <button type="button" id="ppu-filter-all" class="filter-pill-btn active" onclick="setPpuStatusFilter('all')">
+                            Semua <span id="count-ppu-all" class="filter-pill-count">0</span>
+                        </button>
+                        <button type="button" id="ppu-filter-pending" class="filter-pill-btn" onclick="setPpuStatusFilter('pending')">
+                            <i class="fas fa-clock" style="color: #f59e0b;"></i> Belum Rekap <span id="count-ppu-pending" class="filter-pill-count">0</span>
+                        </button>
+                        <button type="button" id="ppu-filter-done" class="filter-pill-btn" onclick="setPpuStatusFilter('done')">
+                            <i class="fas fa-check-circle" style="color: #10b981;"></i> Sudah Rekap <span id="count-ppu-done" class="filter-pill-count">0</span>
+                        </button>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="ppu-list-sort" style="font-size: 13px; font-weight: 600; color: var(--gray); white-space: nowrap;"><i class="fas fa-sort" style="margin-right: 4px;"></i>Urutkan:</label>
+                        <select id="ppu-list-sort" class="form-select" style="width: auto; padding: 6px 12px; font-size: 13px; border-radius: 8px;">
+                            <option value="saved_desc">📅 Tgl Simpan (Terbaru)</option>
+                            <option value="saved_asc">📅 Tgl Simpan (Terlama)</option>
+                            <option value="proposal_desc">📝 Tgl Pengajuan (Terbaru)</option>
+                            <option value="proposal_asc">📝 Tgl Pengajuan (Terlama)</option>
+                            <option value="custom">✋ Urutan Manual (Drag & Drop)</option>
+                        </select>
+                    </div>
+                </div>
             </div>
             <div id="ppu-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;"></div>
             <p id="ppu-list-loading" class="text-center text-gray-500 py-8">Memuat data...</p>
@@ -305,8 +436,20 @@
                 <h1 style="font-size: 28px; font-weight: 700;">Daftar Rekap Tersimpan</h1>
                 <button onclick="showMainPage()" class="btn btn-secondary"><i class="fas fa-times mr-2"></i>Tutup</button>
             </header>
-            <div class="card" style="margin-bottom: 25px;">
-                <input type="text" id="rekap-list-search" class="form-input" placeholder="Cari berdasarkan Nomor Rekap, Proyek, atau Lokasi...">
+            <div class="card list-toolbar">
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;">
+                    <div style="flex: 1; min-width: 250px;">
+                        <input type="text" id="rekap-list-search" class="form-input" placeholder="Cari berdasarkan Nomor Rekap, Proyek, atau Lokasi...">
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <label for="rekap-list-sort" style="font-size: 13px; font-weight: 600; color: var(--gray); white-space: nowrap;"><i class="fas fa-sort" style="margin-right: 4px;"></i>Urutkan:</label>
+                        <select id="rekap-list-sort" class="form-select" style="width: auto; padding: 6px 12px; font-size: 13px; border-radius: 8px;">
+                            <option value="saved_desc">📅 Tgl Simpan (Terbaru)</option>
+                            <option value="saved_asc">📅 Tgl Simpan (Terlama)</option>
+                            <option value="custom">✋ Urutan Manual (Drag & Drop)</option>
+                        </select>
+                    </div>
+                </div>
             </div>
             <div id="rekap-list-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;"></div>
             <p id="rekap-list-loading" class="text-center text-gray-500 py-8">Memuat data...</p>
@@ -564,6 +707,73 @@
         let allPpuData = [];
         let allRekapData = [];
         let currentPpuTargetApp = 'ppu';
+        let currentPpuStatusFilter = 'all'; // 'all', 'pending', 'done'
+        let currentPpuSort = localStorage.getItem('ppu_sort_option') || 'saved_desc';
+        let currentRekapSort = localStorage.getItem('rekap_sort_option') || 'saved_desc';
+
+        function setPpuStatusFilter(filter) {
+            currentPpuStatusFilter = filter;
+            ['all', 'pending', 'done'].forEach(f => {
+                const btn = document.getElementById(`ppu-filter-${f}`);
+                if (btn) {
+                    if (f === filter) btn.classList.add('active');
+                    else btn.classList.remove('active');
+                }
+            });
+            renderPpuList(document.getElementById('ppu-list-search').value, currentPpuTargetApp);
+        }
+
+        function updatePpuFilterCounts() {
+            const countAll = allPpuData.length;
+            const countDone = allPpuData.filter(d => !!d.isRekapDone).length;
+            const countPending = countAll - countDone;
+
+            const elAll = document.getElementById('count-ppu-all');
+            const elPending = document.getElementById('count-ppu-pending');
+            const elDone = document.getElementById('count-ppu-done');
+
+            if (elAll) elAll.textContent = countAll;
+            if (elPending) elPending.textContent = countPending;
+            if (elDone) elDone.textContent = countDone;
+        }
+
+        async function global_togglePpuRekapStatus(event, ppuNumber) {
+            event.stopPropagation();
+            const username = localStorage.getItem('loggedInUser');
+            if (!username) return showNotification('Sesi tidak valid. Silakan login kembali.', 'error');
+
+            const item = allPpuData.find(d => d.projectInfo && d.projectInfo.ppuNumber === ppuNumber);
+            if (!item) return;
+
+            const newStatus = !item.isRekapDone;
+            // Optimistic update
+            item.isRekapDone = newStatus;
+            renderPpuList(document.getElementById('ppu-list-search').value, currentPpuTargetApp);
+            updatePpuFilterCounts();
+
+            const statusText = newStatus ? 'Sudah Direkap' : 'Belum Direkap';
+
+            try {
+                const response = await fetch('/api/updateStatusPPU', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, ppuNumber, isRekapDone: newStatus })
+                });
+                const result = await response.json();
+                if (response.ok && result.success) {
+                    showNotification(`Status "${ppuNumber}": ${statusText}`, 'success', 2500);
+                } else {
+                    throw new Error(result.message || 'Gagal memperbarui status');
+                }
+            } catch (error) {
+                console.error('Error toggling PPU rekap status:', error);
+                // Rollback
+                item.isRekapDone = !newStatus;
+                renderPpuList(document.getElementById('ppu-list-search').value, currentPpuTargetApp);
+                updatePpuFilterCounts();
+                showNotification(`Gagal mengubah status: ${error.message}`, 'error');
+            }
+        }
 
         async function global_handleDelete(event, number, type) {
             event.stopPropagation();
@@ -593,6 +803,7 @@
                     if (type === 'ppu') {
                         allPpuData = allPpuData.filter(d => d.projectInfo.ppuNumber !== number);
                         renderPpuList(document.getElementById('ppu-list-search').value, currentPpuTargetApp);
+                        updatePpuFilterCounts();
                     } else {
                         allRekapData = allRekapData.filter(d => d.projectInfo.rekapNumber !== number);
                         renderRekapList(document.getElementById('rekap-list-search').value);
@@ -609,22 +820,43 @@
             const container = document.getElementById('ppu-list-container');
             container.innerHTML = '';
             const searchTerm = filter.toUpperCase();
-            const filteredData = allPpuData.filter(data => 
-                data.projectInfo.ppuNumber.toUpperCase().includes(searchTerm) ||
-                (data.projectInfo.name && data.projectInfo.name.toUpperCase().includes(searchTerm)) ||
-                (data.projectInfo.location && data.projectInfo.location.toUpperCase().includes(searchTerm))
-            );
+            
+            const filteredData = allPpuData.filter(data => {
+                if (currentPpuStatusFilter === 'pending' && data.isRekapDone) return false;
+                if (currentPpuStatusFilter === 'done' && !data.isRekapDone) return false;
+
+                return data.projectInfo.ppuNumber.toUpperCase().includes(searchTerm) ||
+                    (data.projectInfo.name && data.projectInfo.name.toUpperCase().includes(searchTerm)) ||
+                    (data.projectInfo.location && data.projectInfo.location.toUpperCase().includes(searchTerm));
+            });
 
             if (filteredData.length === 0) {
-                container.innerHTML = `<p style="text-align: center; color: var(--gray); grid-column: 1 / -1;">Tidak ada data PPU yang cocok.</p>`;
+                container.innerHTML = `<p style="text-align: center; color: var(--gray); grid-column: 1 / -1; padding: 30px 0;">Tidak ada data PPU yang cocok.</p>`;
+                updatePpuFilterCounts();
                 return;
             }
             
             filteredData.sort((a, b) => {
-                const orderA = a.order !== undefined ? a.order : 999999;
-                const orderB = b.order !== undefined ? b.order : 999999;
-                if (orderA !== orderB) return orderA - orderB;
-                return new Date(b.savedAt) - new Date(a.savedAt);
+                if (currentPpuSort === 'saved_asc') {
+                    return new Date(a.savedAt || 0) - new Date(b.savedAt || 0);
+                } else if (currentPpuSort === 'saved_desc') {
+                    return new Date(b.savedAt || 0) - new Date(a.savedAt || 0);
+                } else if (currentPpuSort === 'proposal_desc') {
+                    const dateA = a.projectInfo?.proposalDate ? new Date(a.projectInfo.proposalDate) : new Date(0);
+                    const dateB = b.projectInfo?.proposalDate ? new Date(b.projectInfo.proposalDate) : new Date(0);
+                    if (dateB - dateA !== 0) return dateB - dateA;
+                    return new Date(b.savedAt || 0) - new Date(a.savedAt || 0);
+                } else if (currentPpuSort === 'proposal_asc') {
+                    const dateA = a.projectInfo?.proposalDate ? new Date(a.projectInfo.proposalDate) : new Date(0);
+                    const dateB = b.projectInfo?.proposalDate ? new Date(b.projectInfo.proposalDate) : new Date(0);
+                    if (dateA - dateB !== 0) return dateA - dateB;
+                    return new Date(a.savedAt || 0) - new Date(b.savedAt || 0);
+                } else {
+                    const orderA = a.order !== undefined ? a.order : 999999;
+                    const orderB = b.order !== undefined ? b.order : 999999;
+                    if (orderA !== orderB) return orderA - orderB;
+                    return new Date(b.savedAt || 0) - new Date(a.savedAt || 0);
+                }
             });
 
             filteredData.forEach(data => {
@@ -639,13 +871,21 @@
 
                 const encodedData = encodeURIComponent(JSON.stringify(data));
                 const clickHandler = targetApp === 'rekap' ? `window.rekap_selectPpu(JSON.parse(decodeURIComponent('${encodedData}')))` : `window.ppu_loadData(JSON.parse(decodeURIComponent('${encodedData}')))`;
-                
+
+                const isDone = !!data.isRekapDone;
+                const statusBadgeHtml = isDone
+                    ? `<button type="button" class="badge-rekap-status badge-rekap-done" onclick="global_togglePpuRekapStatus(event, '${data.projectInfo.ppuNumber}')" title="Klik untuk mengubah menjadi Belum Direkap"><i class="fas fa-check-circle" style="color: #10b981;"></i> Sudah Direkap</button>`
+                    : `<button type="button" class="badge-rekap-status badge-rekap-pending" onclick="global_togglePpuRekapStatus(event, '${data.projectInfo.ppuNumber}')" title="Klik untuk mengubah menjadi Sudah Direkap"><i class="fas fa-clock" style="color: #f59e0b;"></i> Belum Direkap</button>`;
+
                 card.innerHTML = `
                     <button onclick="global_handleDelete(event, '${data.projectInfo.ppuNumber}', 'ppu')" style="position: absolute; top: 10px; right: 10px; background: #f1f5f9; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; color: var(--gray); display: flex; align-items: center; justify-content: center;"><i class="fas fa-trash-alt fa-sm"></i></button>
                     <div onclick="${clickHandler}">
-                        <div style="padding-right: 30px;">
-                            <p style="font-weight: 700; color: var(--dark);">${data.projectInfo.ppuNumber}</p>
-                            <p style="font-size: 14px; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${data.projectInfo.name || 'Tanpa Nama Proyek'}</p>
+                        <div style="padding-right: 35px;">
+                            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px;">
+                                <p style="font-weight: 700; color: var(--dark); font-size: 15px; margin: 0;">${data.projectInfo.ppuNumber}</p>
+                                ${statusBadgeHtml}
+                            </div>
+                            <p style="font-size: 14px; color: var(--gray); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 4px;">${data.projectInfo.name || 'Tanpa Nama Proyek'}</p>
                             <p style="font-size: 12px; color: #adb5bd;"><i class="fas fa-map-marker-alt" style="margin-right: 4px;"></i>${data.projectInfo.location || 'Tanpa Lokasi'}</p>
                         </div>
                         <div style="margin-top: 16px; padding-top: 12px; border-top: 1px solid #e9ecef;">
@@ -661,6 +901,7 @@
                 `;
                 container.appendChild(card);
             });
+            updatePpuFilterCounts();
         }
         
         function renderRekapList(filter = '') {
@@ -674,15 +915,21 @@
             );
 
             if (filteredData.length === 0) {
-                container.innerHTML = `<p style="text-align: center; color: var(--gray); grid-column: 1 / -1;">Tidak ada data Rekap yang cocok.</p>`;
+                container.innerHTML = `<p style="text-align: center; color: var(--gray); grid-column: 1 / -1; padding: 30px 0;">Tidak ada data Rekap yang cocok.</p>`;
                 return;
             }
             
             filteredData.sort((a, b) => {
-                const orderA = a.order !== undefined ? a.order : 999999;
-                const orderB = b.order !== undefined ? b.order : 999999;
-                if (orderA !== orderB) return orderA - orderB;
-                return new Date(b.savedAt) - new Date(a.savedAt);
+                if (currentRekapSort === 'saved_asc') {
+                    return new Date(a.savedAt || 0) - new Date(b.savedAt || 0);
+                } else if (currentRekapSort === 'saved_desc') {
+                    return new Date(b.savedAt || 0) - new Date(a.savedAt || 0);
+                } else {
+                    const orderA = a.order !== undefined ? a.order : 999999;
+                    const orderB = b.order !== undefined ? b.order : 999999;
+                    if (orderA !== orderB) return orderA - orderB;
+                    return new Date(b.savedAt || 0) - new Date(a.savedAt || 0);
+                }
             });
 
             filteredData.forEach(data => {
@@ -804,6 +1051,26 @@
             initRekapApp();
             document.getElementById('ppu-list-search').addEventListener('input', (e) => renderPpuList(e.target.value, currentPpuTargetApp));
             document.getElementById('rekap-list-search').addEventListener('input', (e) => renderRekapList(e.target.value));
+
+            const ppuSortSelect = document.getElementById('ppu-list-sort');
+            if (ppuSortSelect) {
+                ppuSortSelect.value = currentPpuSort;
+                ppuSortSelect.addEventListener('change', (e) => {
+                    currentPpuSort = e.target.value;
+                    localStorage.setItem('ppu_sort_option', currentPpuSort);
+                    renderPpuList(document.getElementById('ppu-list-search').value, currentPpuTargetApp);
+                });
+            }
+
+            const rekapSortSelect = document.getElementById('rekap-list-sort');
+            if (rekapSortSelect) {
+                rekapSortSelect.value = currentRekapSort;
+                rekapSortSelect.addEventListener('change', (e) => {
+                    currentRekapSort = e.target.value;
+                    localStorage.setItem('rekap_sort_option', currentRekapSort);
+                    renderRekapList(document.getElementById('rekap-list-search').value);
+                });
+            }
             
             Sortable.create(document.getElementById('ppu-list-container'), {
                 animation: 150,
@@ -811,10 +1078,16 @@
                     const children = document.getElementById('ppu-list-container').children;
                     const orderData = Array.from(children).map((child, index) => {
                         const id = child.dataset.id;
-                        const item = allPpuData.find(d => d.projectInfo.ppuNumber === id);
+                        const item = allPpuData.find(d => d.projectInfo && d.projectInfo.ppuNumber === id);
                         if (item) item.order = index;
                         return { key: id, order: index };
                     });
+
+                    currentPpuSort = 'custom';
+                    localStorage.setItem('ppu_sort_option', 'custom');
+                    const sortSelect = document.getElementById('ppu-list-sort');
+                    if (sortSelect) sortSelect.value = 'custom';
+
                     try {
                         showNotification('Menyimpan urutan PPU...', 'info');
                         const response = await fetch('/api/simpanUrutan', {
@@ -838,10 +1111,16 @@
                     const children = document.getElementById('rekap-list-container').children;
                     const orderData = Array.from(children).map((child, index) => {
                         const id = child.dataset.id;
-                        const item = allRekapData.find(d => d.projectInfo.rekapNumber === id);
+                        const item = allRekapData.find(d => d.projectInfo && d.projectInfo.rekapNumber === id);
                         if (item) item.order = index;
                         return { key: id, order: index };
                     });
+
+                    currentRekapSort = 'custom';
+                    localStorage.setItem('rekap_sort_option', 'custom');
+                    const sortSelect = document.getElementById('rekap-list-sort');
+                    if (sortSelect) sortSelect.value = 'custom';
+
                     try {
                         showNotification('Menyimpan urutan Rekap...', 'info');
                         const response = await fetch('/api/simpanUrutan', {
@@ -1034,7 +1313,7 @@
                 updateFormUI('');
             };
             const resetAll = () => {
-                state = { projectInfo: {}, expenses: [] };
+                state = { projectInfo: {}, expenses: [], isRekapDone: false };
                 DOMElements.projectInfoFields.ppuNumberManual.value = '';
                 renderAll();
                 resetForm();
@@ -1105,6 +1384,7 @@
             window.ppu_loadData = (data) => {
                 state.projectInfo = data.projectInfo;
                 state.expenses = data.expenses;
+                state.isRekapDone = !!data.isRekapDone;
                 DOMElements.projectInfoFields.ppuNumberManual.value = data.projectInfo.ppuNumber.replace('PPU-', '');
                 renderAll();
                 showMainPage();
