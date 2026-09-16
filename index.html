@@ -1365,6 +1365,7 @@
             // New UI Population
             const userAvatar = document.getElementById('user-avatar');
             const userGreeting = document.getElementById('logged-in-user-greeting');
+            const manageUsersBtn = document.getElementById('manage-users-btn');
             const isMasterAdmin = loggedInUser && loggedInUser.toLowerCase() === 'krisandi';
             const userRole = localStorage.getItem('userRole') || (isMasterAdmin ? 'admin' : 'user');
             if (isMasterAdmin && localStorage.getItem('userRole') !== 'admin') {
