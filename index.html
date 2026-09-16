@@ -365,7 +365,8 @@
                         <p id="logged-in-user-greeting" style="font-size: 14px; opacity: 0.9;"></p>
                     </div>
                 </div>
-                <div class="quick-actions" style="display: flex; gap: 8px;">
+                <div class="quick-actions" style="display: flex; gap: 8px; align-items: center;">
+                     <button id="manage-users-btn" class="btn btn-outline hidden" title="Kelola Pengguna"><i class="fas fa-users-cog"></i><span class="btn-text">Kelola User</span></button>
                      <button id="dark-mode-toggle" class="btn btn-outline" onclick="toggleDarkMode()" title="Ganti Tema"><i class="fas fa-moon"></i></button>
                      <button id="logout-btn" class="btn btn-outline"><i class="fas fa-sign-out-alt"></i>Keluar</button>
                 </div>
@@ -465,6 +466,88 @@
                 <button id="modal-cancel" class="btn btn-secondary">Batal</button>
                 <button id="modal-confirm" class="btn btn-primary">OK</button>
             </div>
+        </div>
+    </div>
+
+    <!-- Modal for User Management -->
+    <div id="modal-manage-users" class="hidden" style="position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 50;">
+        <div class="card" style="width: 100%; max-width: 650px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; border-bottom: 1px solid #e9ecef; padding-bottom: 0.75rem;">
+                <h3 style="font-size: 1.25rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-users-cog" style="color: var(--primary);"></i> Kelola Pengguna
+                </h3>
+                <button type="button" onclick="closeManageUsersModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: var(--gray); line-height: 1;">&times;</button>
+            </div>
+
+            <!-- Form Tambah User Baru -->
+            <div style="background-color: #f8f9fa; padding: 1rem; border-radius: 8px; border: 1px solid #e9ecef; margin-bottom: 1.5rem;">
+                <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 0.75rem; color: #343a40;">Tambah Pengguna Baru</h4>
+                <form id="form-add-user" onsubmit="handleAddNewUser(event)" style="display: grid; grid-template-columns: repeat(1, 1fr); gap: 0.75rem;" class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Username</label>
+                        <input type="text" id="new-user-username" class="form-input" style="padding: 6px 10px; font-size: 13px;" placeholder="contoh: budi" required autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Password</label>
+                        <input type="text" id="new-user-password" class="form-input" style="padding: 6px 10px; font-size: 13px;" placeholder="minimal 3 kar." required autocomplete="off">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">Peran (Role)</label>
+                        <select id="new-user-role" class="form-select" style="padding: 6px 10px; font-size: 13px;">
+                            <option value="user">User Biasa</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <button type="submit" id="btn-add-user-submit" class="btn btn-primary" style="width: 100%; padding: 8px 12px; font-size: 13px;">
+                            <i class="fas fa-plus"></i> Tambah
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Daftar Pengguna Aktif -->
+            <h4 style="font-size: 14px; font-weight: 600; margin-bottom: 0.75rem; color: #343a40;">Daftar Pengguna Aktif</h4>
+            <div class="overflow-x-auto" style="border: 1px solid #e9ecef; border-radius: 8px;">
+                <table style="width: 100%; text-align: left; font-size: 13px;">
+                    <thead style="background-color: #f8f9fa; border-bottom: 2px solid #dee2e6;">
+                        <tr>
+                            <th style="padding: 8px 12px; font-weight: 600; width: 40px; text-align: center;">No</th>
+                            <th style="padding: 8px 12px; font-weight: 600;">Username</th>
+                            <th style="padding: 8px 12px; font-weight: 600; width: 90px;">Peran</th>
+                            <th style="padding: 8px 12px; font-weight: 600; text-align: center; width: 190px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-list-table-body">
+                        <tr><td colspan="4" style="text-align: center; padding: 1.5rem; color: var(--gray);">Memuat daftar pengguna...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end; margin-top: 1.25rem;">
+                <button type="button" onclick="closeManageUsersModal()" class="btn btn-secondary" style="font-size: 13px;">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Ubah Password -->
+    <div id="modal-change-password" class="hidden" style="position: fixed; inset: 0; background-color: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; padding: 1rem; z-index: 60;">
+        <div class="card" style="width: 100%; max-width: 400px;">
+            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 1rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-key" style="color: var(--primary);"></i> Ubah Password
+            </h3>
+            <form id="form-change-password" onsubmit="submitChangePassword(event)">
+                <input type="hidden" id="change-pwd-target-user">
+                <p id="change-pwd-user-label" style="font-size: 14px; margin-bottom: 1rem; color: var(--gray);"></p>
+                <div style="margin-bottom: 1.25rem;">
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Password Baru</label>
+                    <input type="text" id="change-pwd-new-input" class="form-input" placeholder="Masukkan password baru" required autocomplete="off">
+                </div>
+                <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <button type="button" onclick="closeChangePasswordModal()" class="btn btn-secondary" style="font-size: 13px;">Batal</button>
+                    <button type="submit" id="btn-change-pwd-submit" class="btn btn-primary" style="font-size: 13px;">Simpan Password</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -679,28 +762,242 @@
         }
         
         // --- LOGIN & AUTHENTICATION ---
-        const allowedUsers = {
-            'krisandi': '12345', 'wira': '12345', 'denny': '12345',
-            'valdy': '12345', 'astri': '12345', 'isparmo': '12345',
-            'zaman': '12345', 'rifa': '12345',
-        };
-
-        function handleLogin(event) {
+        async function handleLogin(event) {
             event.preventDefault();
-            const username = document.getElementById('username').value.toLowerCase();
-            const password = document.getElementById('password').value;
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const submitBtn = event.target.querySelector('button[type="submit"]');
 
-            if (allowedUsers[username] && allowedUsers[username] === password) {
-                localStorage.setItem('loggedInUser', username);
-                initializeApp();
-            } else {
-                showNotification('Username atau password salah.', 'error');
+            const username = (usernameInput?.value || '').trim().toLowerCase();
+            const password = passwordInput?.value || '';
+
+            if (!username || !password) {
+                return showNotification('Mohon masukkan username dan password.', 'error');
+            }
+
+            const originalBtnText = submitBtn ? submitBtn.innerHTML : 'Masuk';
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i>Masuk...';
+            }
+
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    localStorage.setItem('loggedInUser', result.username);
+                    localStorage.setItem('userRole', result.role || (result.username === 'krisandi' ? 'admin' : 'user'));
+                    initializeApp();
+                } else {
+                    showNotification(result.message || 'Username atau password salah.', 'error');
+                }
+            } catch (err) {
+                console.error('Error saat login:', err);
+                showNotification('Gagal terhubung ke server login. Silakan coba lagi.', 'error');
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
             }
         }
 
         function handleLogout() {
             localStorage.removeItem('loggedInUser');
+            localStorage.removeItem('userRole');
             window.location.reload();
+        }
+
+        // --- MANAGE USERS MODAL & ACTIONS ---
+        async function openManageUsersModal() {
+            const modal = document.getElementById('modal-manage-users');
+            if (!modal) return;
+            modal.classList.remove('hidden');
+            await loadUserList();
+        }
+
+        function closeManageUsersModal() {
+            const modal = document.getElementById('modal-manage-users');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function loadUserList() {
+            const tbody = document.getElementById('user-list-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 1.5rem; color: var(--gray);"><i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i>Memuat daftar pengguna...</td></tr>';
+            
+            const adminUsername = localStorage.getItem('loggedInUser');
+            try {
+                const response = await fetch('/api/manageUsers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminUsername, action: 'list' })
+                });
+                const result = await response.json();
+                if (result.success && Array.isArray(result.users)) {
+                    if (result.users.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 1.5rem; color: var(--gray);">Belum ada data pengguna.</td></tr>';
+                        return;
+                    }
+                    tbody.innerHTML = result.users.map((u, idx) => {
+                        const isMaster = u.username === 'krisandi';
+                        const isCurrent = u.username === adminUsername;
+                        const roleBadge = u.role === 'admin'
+                            ? '<span style="padding: 2px 8px; font-size: 11px; font-weight: 600; border-radius: 12px; background-color: #e7e9ff; color: var(--primary);">Admin</span>'
+                            : '<span style="padding: 2px 8px; font-size: 11px; font-weight: 600; border-radius: 12px; background-color: #e9ecef; color: #495057;">User</span>';
+                        
+                        const actionButtons = `
+                            <button type="button" onclick="openChangePasswordModal('${u.username}')" title="Ubah Password" class="btn btn-secondary" style="padding: 4px 8px; font-size: 12px; margin-right: 6px;">
+                                <i class="fas fa-key"></i> Ubah Password
+                            </button>
+                            ${isMaster ? '<span style="font-size: 11px; color: var(--gray); font-style: italic;">Master Admin</span>' : `
+                                <button type="button" onclick="handleDeleteUser('${u.username}')" ${isCurrent ? 'disabled title="Tidak dapat menghapus akun sendiri"' : 'title="Hapus Pengguna"'} class="btn btn-outline" style="padding: 4px 8px; font-size: 12px; color: var(--danger); border-color: var(--danger);">
+                                    <i class="fas fa-trash-alt"></i> Hapus
+                                </button>
+                            `}
+                        `;
+
+                        return `
+                            <tr style="border-bottom: 1px solid #e9ecef;">
+                                <td style="padding: 8px 12px; text-align: center;">${idx + 1}</td>
+                                <td style="padding: 8px 12px; font-weight: 600; color: #343a40;">${u.username} ${isCurrent ? '<span style="font-size: 11px; color: var(--gray); font-weight: normal;">(Anda)</span>' : ''}</td>
+                                <td style="padding: 8px 12px;">${roleBadge}</td>
+                                <td style="padding: 8px 12px; text-align: center;">${actionButtons}</td>
+                            </tr>
+                        `;
+                    }).join('');
+                } else {
+                    tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; padding: 1.5rem; color: var(--danger);">${result.message || 'Gagal memuat pengguna.'}</td></tr>`;
+                }
+            } catch (err) {
+                console.error('Error load user list:', err);
+                tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 1.5rem; color: var(--danger);">Gagal menghubungi server.</td></tr>';
+            }
+        }
+
+        async function handleAddNewUser(event) {
+            event.preventDefault();
+            const usernameInput = document.getElementById('new-user-username');
+            const passwordInput = document.getElementById('new-user-password');
+            const roleInput = document.getElementById('new-user-role');
+            const submitBtn = document.getElementById('btn-add-user-submit');
+
+            const newUsername = usernameInput.value.trim().toLowerCase();
+            const newPassword = passwordInput.value;
+            const role = roleInput.value;
+            const adminUsername = localStorage.getItem('loggedInUser');
+
+            if (!newUsername || !newPassword) {
+                return showNotification('Lengkapi username dan password!', 'error');
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menambah...';
+
+            try {
+                const response = await fetch('/api/manageUsers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminUsername, action: 'add', newUsername, newPassword, role })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    usernameInput.value = '';
+                    passwordInput.value = '';
+                    await loadUserList();
+                } else {
+                    showNotification(result.message || 'Gagal menambahkan user.', 'error');
+                }
+            } catch (err) {
+                console.error('Error add user:', err);
+                showNotification('Terjadi kesalahan saat menambahkan user.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-plus"></i> Tambah';
+            }
+        }
+
+        function openChangePasswordModal(targetUsername) {
+            document.getElementById('change-pwd-target-user').value = targetUsername;
+            document.getElementById('change-pwd-user-label').innerHTML = `Ubah password untuk akun: <strong>${targetUsername}</strong>`;
+            document.getElementById('change-pwd-new-input').value = '';
+            document.getElementById('modal-change-password').classList.remove('hidden');
+        }
+
+        function closeChangePasswordModal() {
+            document.getElementById('modal-change-password').classList.add('hidden');
+        }
+
+        async function submitChangePassword(event) {
+            event.preventDefault();
+            const targetUsername = document.getElementById('change-pwd-target-user').value;
+            const newPassword = document.getElementById('change-pwd-new-input').value;
+            const submitBtn = document.getElementById('btn-change-pwd-submit');
+            const adminUsername = localStorage.getItem('loggedInUser');
+
+            if (!targetUsername || !newPassword) {
+                return showNotification('Password baru tidak boleh kosong.', 'error');
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+
+            try {
+                const response = await fetch('/api/manageUsers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ adminUsername, action: 'updatePassword', targetUsername, newPassword })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showNotification(result.message, 'success');
+                    closeChangePasswordModal();
+                } else {
+                    showNotification(result.message || 'Gagal mengubah password.', 'error');
+                }
+            } catch (err) {
+                console.error('Error update password:', err);
+                showNotification('Terjadi kesalahan saat mengubah password.', 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Simpan Password';
+            }
+        }
+
+        function handleDeleteUser(targetUsername) {
+            showModal(
+                'Konfirmasi Hapus Pengguna',
+                `Apakah Anda yakin ingin menghapus akun pengguna <strong>"${targetUsername}"</strong>? Pengguna ini tidak akan bisa login lagi ke sistem.`,
+                'confirm',
+                async () => {
+                    const adminUsername = localStorage.getItem('loggedInUser');
+                    try {
+                        const response = await fetch('/api/manageUsers', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ adminUsername, action: 'delete', targetUsername })
+                        });
+                        const result = await response.json();
+                        if (result.success) {
+                            showNotification(result.message, 'success');
+                            await loadUserList();
+                        } else {
+                            showNotification(result.message || 'Gagal menghapus pengguna.', 'error');
+                        }
+                    } catch (err) {
+                        console.error('Error delete user:', err);
+                        showNotification('Terjadi kesalahan saat menghapus pengguna.', 'error');
+                    }
+                }
+            );
         }
 
         // --- GLOBAL DATA LIST MANAGEMENT ---
@@ -1040,8 +1337,20 @@
             // New UI Population
             const userAvatar = document.getElementById('user-avatar');
             const userGreeting = document.getElementById('logged-in-user-greeting');
+            const manageUsersBtn = document.getElementById('manage-users-btn');
+            const userRole = localStorage.getItem('userRole') || (loggedInUser === 'krisandi' ? 'admin' : 'user');
+
             if(userAvatar) userAvatar.textContent = loggedInUser.charAt(0).toUpperCase();
-            if(userGreeting) userGreeting.textContent = `Masuk sebagai: ${loggedInUser.charAt(0).toUpperCase() + loggedInUser.slice(1)}`;
+            if(userGreeting) userGreeting.textContent = `Masuk sebagai: ${loggedInUser.charAt(0).toUpperCase() + loggedInUser.slice(1)}${userRole === 'admin' ? ' (Admin)' : ''}`;
+
+            if(manageUsersBtn) {
+                if (userRole === 'admin') {
+                    manageUsersBtn.classList.remove('hidden');
+                    manageUsersBtn.onclick = openManageUsersModal;
+                } else {
+                    manageUsersBtn.classList.add('hidden');
+                }
+            }
 
             document.getElementById('logout-btn').addEventListener('click', handleLogout);
             showMainPage();
