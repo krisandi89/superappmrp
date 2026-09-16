@@ -782,16 +782,16 @@
             }
 
             try {
-                const response = await fetch('/api/login', {
+                const response = await fetch('/api/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ username, password })
+                    body: JSON.stringify({ action: 'login', username, password })
                 });
                 const result = await response.json();
 
                 if (result.success) {
                     localStorage.setItem('loggedInUser', result.username);
-                    localStorage.setItem('userRole', result.role || (result.username === 'krisandi' ? 'admin' : 'user'));
+                    localStorage.setItem('userRole', result.role || (result.username.toLowerCase() === 'krisandi' ? 'admin' : 'user'));
                     initializeApp();
                 } else {
                     showNotification(result.message || 'Username atau password salah.', 'error');
@@ -833,7 +833,7 @@
             
             const adminUsername = localStorage.getItem('loggedInUser');
             try {
-                const response = await fetch('/api/manageUsers', {
+                const response = await fetch('/api/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ adminUsername, action: 'list' })
@@ -900,7 +900,7 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menambah...';
 
             try {
-                const response = await fetch('/api/manageUsers', {
+                const response = await fetch('/api/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ adminUsername, action: 'add', newUsername, newPassword, role })
@@ -950,7 +950,7 @@
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
 
             try {
-                const response = await fetch('/api/manageUsers', {
+                const response = await fetch('/api/users', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ adminUsername, action: 'updatePassword', targetUsername, newPassword })
@@ -980,7 +980,7 @@
                 async () => {
                     const adminUsername = localStorage.getItem('loggedInUser');
                     try {
-                        const response = await fetch('/api/manageUsers', {
+                        const response = await fetch('/api/users', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ adminUsername, action: 'delete', targetUsername })
@@ -1337,14 +1337,17 @@
             // New UI Population
             const userAvatar = document.getElementById('user-avatar');
             const userGreeting = document.getElementById('logged-in-user-greeting');
-            const manageUsersBtn = document.getElementById('manage-users-btn');
-            const userRole = localStorage.getItem('userRole') || (loggedInUser === 'krisandi' ? 'admin' : 'user');
+            const isMasterAdmin = loggedInUser && loggedInUser.toLowerCase() === 'krisandi';
+            const userRole = localStorage.getItem('userRole') || (isMasterAdmin ? 'admin' : 'user');
+            if (isMasterAdmin && localStorage.getItem('userRole') !== 'admin') {
+                localStorage.setItem('userRole', 'admin');
+            }
 
             if(userAvatar) userAvatar.textContent = loggedInUser.charAt(0).toUpperCase();
-            if(userGreeting) userGreeting.textContent = `Masuk sebagai: ${loggedInUser.charAt(0).toUpperCase() + loggedInUser.slice(1)}${userRole === 'admin' ? ' (Admin)' : ''}`;
+            if(userGreeting) userGreeting.textContent = `Masuk sebagai: ${loggedInUser.charAt(0).toUpperCase() + loggedInUser.slice(1)}${userRole === 'admin' || isMasterAdmin ? ' (Admin)' : ''}`;
 
             if(manageUsersBtn) {
-                if (userRole === 'admin') {
+                if (userRole === 'admin' || isMasterAdmin) {
                     manageUsersBtn.classList.remove('hidden');
                     manageUsersBtn.onclick = openManageUsersModal;
                 } else {

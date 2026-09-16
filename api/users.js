@@ -1,4 +1,4 @@
-// /api/manageUsers.js
+// /api/users.js
 import { kv } from '@vercel/kv';
 
 const DEFAULT_USERS = {
@@ -18,35 +18,60 @@ export default async function handler(request, response) {
   }
 
   try {
-    const { adminUsername, action, newUsername, newPassword, targetUsername, role } = request.body || {};
-
-    if (!adminUsername) {
-      return response.status(401).json({ success: false, message: 'Identitas Admin diperlukan.' });
-    }
-
-    const cleanAdmin = String(adminUsername).trim().toLowerCase();
+    const { action, username, password, adminUsername, newUsername, newPassword, targetUsername, role } = request.body || {};
 
     // Ambil data user dari Vercel KV
     let users = await kv.get('app_users');
     if (!users || typeof users !== 'object' || Object.keys(users).length === 0) {
       users = { ...DEFAULT_USERS };
       await kv.set('app_users', users);
+    } else {
+      // Pastikan akun master admin selalu ada
+      if (!users['krisandi']) {
+        users['krisandi'] = { password: '12345', role: 'admin', createdAt: new Date().toISOString() };
+        await kv.set('app_users', users);
+      }
     }
 
-    // Pastikan pemohon adalah Admin
+    // 1. ACTION: LOGIN
+    if (action === 'login') {
+      if (!username || !password) {
+        return response.status(400).json({ success: false, message: 'Username dan password wajib diisi.' });
+      }
+      const cleanUsername = String(username).trim().toLowerCase();
+      const cleanPassword = String(password);
+
+      const user = users[cleanUsername];
+      if (user && user.password === cleanPassword) {
+        const userRole = user.role || (cleanUsername === 'krisandi' ? 'admin' : 'user');
+        return response.status(200).json({
+          success: true,
+          username: cleanUsername,
+          role: userRole
+        });
+      }
+
+      return response.status(401).json({
+        success: false,
+        message: 'Username atau password salah.'
+      });
+    }
+
+    // Helper untuk memverifikasi role Admin untuk aksi manajemen user
+    const cleanAdmin = String(adminUsername || '').trim().toLowerCase();
     const adminUser = users[cleanAdmin];
     if (!adminUser || adminUser.role !== 'admin') {
       return response.status(403).json({ success: false, message: 'Akses ditolak. Hanya Admin yang dapat mengelola pengguna.' });
     }
 
-    // 1. ACTION: LIST
+    // 2. ACTION: LIST USERS
     if (action === 'list') {
       const userList = Object.keys(users).map(uname => ({
         username: uname,
         role: users[uname].role || (uname === 'krisandi' ? 'admin' : 'user'),
         createdAt: users[uname].createdAt || null
       }));
-      // Urutkan: admin di atas, lalu alfabetis
+      // Urutkan admin di atas, lalu alfabetis
       userList.sort((a, b) => {
         if (a.role === 'admin' && b.role !== 'admin') return -1;
         if (a.role !== 'admin' && b.role === 'admin') return 1;
@@ -55,14 +80,13 @@ export default async function handler(request, response) {
       return response.status(200).json({ success: true, users: userList });
     }
 
-    // 2. ACTION: ADD USER
+    // 3. ACTION: ADD USER
     if (action === 'add') {
       if (!newUsername || !newPassword) {
         return response.status(400).json({ success: false, message: 'Username dan Password baru wajib diisi.' });
       }
 
       const cleanNewUser = String(newUsername).trim().toLowerCase();
-      // Validasi karakter username (hanya huruf, angka, underscore, strip)
       if (!/^[a-z0-9_-]{3,20}$/.test(cleanNewUser)) {
         return response.status(400).json({
           success: false,
@@ -88,7 +112,7 @@ export default async function handler(request, response) {
       return response.status(200).json({ success: true, message: `Pengguna "${cleanNewUser}" berhasil ditambahkan.` });
     }
 
-    // 3. ACTION: UPDATE PASSWORD
+    // 4. ACTION: UPDATE PASSWORD
     if (action === 'updatePassword') {
       if (!targetUsername || !newPassword) {
         return response.status(400).json({ success: false, message: 'Username target dan Password baru wajib diisi.' });
@@ -108,15 +132,13 @@ export default async function handler(request, response) {
       return response.status(200).json({ success: true, message: `Password untuk "${cleanTarget}" berhasil diperbarui.` });
     }
 
-    // 4. ACTION: DELETE USER
+    // 5. ACTION: DELETE USER
     if (action === 'delete') {
       if (!targetUsername) {
         return response.status(400).json({ success: false, message: 'Username target wajib ditentukan.' });
       }
 
       const cleanTarget = String(targetUsername).trim().toLowerCase();
-
-      // Proteksi Master Admin
       if (cleanTarget === 'krisandi') {
         return response.status(400).json({ success: false, message: 'Akun Master Admin "krisandi" diproteksi dan tidak dapat dihapus.' });
       }
@@ -138,6 +160,6 @@ export default async function handler(request, response) {
 
   } catch (error) {
     console.error('Error saat kelola pengguna:', error);
-    return response.status(500).json({ success: false, message: 'Terjadi kesalahan pada server saat mengelola pengguna.' });
+    return response.status(500).json({ success: false, message: 'Terjadi kesalahan pada server saat memproses data pengguna.' });
   }
 }
