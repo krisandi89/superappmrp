@@ -345,7 +345,7 @@
             <div class="card" style="max-width: 420px; width: 100%; text-align: center;">
                 <h2 style="font-size: 28px; font-weight: 700; margin-bottom: 10px;">Selamat Datang</h2>
                 <p style="color: var(--gray); margin-bottom: 30px;">Silakan masuk untuk melanjutkan</p>
-                <form id="login-form" style="display: flex; flex-direction: column; gap: 20px;">
+                <form id="login-form" method="POST" action="javascript:void(0);" onsubmit="handleLogin(event); return false;" style="display: flex; flex-direction: column; gap: 20px;">
                     <input id="username" name="username" type="text" required class="form-input" placeholder="Masukkan username">
                     <input id="password" name="password" type="password" required class="form-input" placeholder="Masukkan password">
                     <button type="submit" class="btn" style="background-color: var(--primary); color: white;">Masuk</button>
@@ -763,10 +763,14 @@
         
         // --- LOGIN & AUTHENTICATION ---
         async function handleLogin(event) {
-            event.preventDefault();
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
             const usernameInput = document.getElementById('username');
             const passwordInput = document.getElementById('password');
-            const submitBtn = event.target.querySelector('button[type="submit"]');
+            const formEl = document.getElementById('login-form');
+            const submitBtn = formEl ? formEl.querySelector('button[type="submit"]') : null;
 
             const username = (usernameInput?.value || '').trim().toLowerCase();
             const password = passwordInput?.value || '';
@@ -789,9 +793,12 @@
                 });
                 const result = await response.json();
 
-                if (result.success) {
+                if (response.ok && result.success) {
                     localStorage.setItem('loggedInUser', result.username);
                     localStorage.setItem('userRole', result.role || (result.username.toLowerCase() === 'krisandi' ? 'admin' : 'user'));
+                    if (window.location.search) {
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
                     initializeApp();
                 } else {
                     showNotification(result.message || 'Username atau password salah.', 'error');
@@ -1327,10 +1334,31 @@
         
         // --- CONTENT INJECTION & INITIALIZATION ---
         async function initializeApp() {
+            // Cek jika ada kredensial di URL query params (misal akibat native form submit sebelumnya)
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                const urlUser = urlParams.get('username');
+                const urlPass = urlParams.get('password');
+                if (urlUser && urlPass) {
+                    const usernameInput = document.getElementById('username');
+                    const passwordInput = document.getElementById('password');
+                    if (usernameInput) usernameInput.value = urlUser;
+                    if (passwordInput) passwordInput.value = urlPass;
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                    handleLogin();
+                    return;
+                }
+            } catch (e) {
+                console.error('Error parsing URL credentials:', e);
+            }
+
             const loggedInUser = localStorage.getItem('loggedInUser');
             if (!loggedInUser) {
                 showLoginPage();
-                document.getElementById('login-form').addEventListener('submit', handleLogin);
+                const loginForm = document.getElementById('login-form');
+                if (loginForm) {
+                    loginForm.onsubmit = (e) => { handleLogin(e); return false; };
+                }
                 return;
             }
             
@@ -1454,7 +1482,11 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', initializeApp);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeApp);
+        } else {
+            initializeApp();
+        }
         
         // --- PPU APP SCRIPT ---
         function initPPUApp() {
