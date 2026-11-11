@@ -1,5 +1,6 @@
 // /api/ambilSemuaNomorRekap.js
 import { kv } from '@vercel/kv';
+import { requireSession } from '../session.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'GET') {
@@ -7,14 +8,12 @@ export default async function handler(request, response) {
   }
 
   try {
-    const { username } = request.query;
-    if (!username) {
-        return response.status(400).json({ success: false, message: 'Username diperlukan.' });
-    }
-
+    const session = await requireSession(request, response);
+    if (!session) return;
+    const { username } = session;
     const keys = [];
     const matchPattern = `${username}-REKAP-*`;
-    
+
     for await (const key of kv.scanIterator({ match: matchPattern })) {
       keys.push(key);
     }

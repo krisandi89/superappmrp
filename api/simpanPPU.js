@@ -1,5 +1,6 @@
 // /api/simpanPPU.js
 import { kv } from '@vercel/kv';
+import { requireSession, isDocumentNumber } from '../session.js';
 
 // Fungsi utama yang akan dijalankan oleh Vercel
 export default async function handler(request, response) {
@@ -9,12 +10,15 @@ export default async function handler(request, response) {
   }
 
   try {
+    const session = await requireSession(request, response);
+    if (!session) return;
+    const { username } = session;
     // Ambil data PPU dan username dari body request
-    const { data, username } = request.body;
+    const { data } = request.body || {};
 
     // Pastikan data, ppuNumber, dan username ada
-    if (!data || !data.projectInfo || !data.projectInfo.ppuNumber || !username) {
-      return response.status(400).json({ success: false, message: 'Data tidak lengkap. Username dan Nomor PPU wajib diisi.' });
+    if (!isDocumentNumber(data?.projectInfo?.ppuNumber, 'PPU')) {
+      return response.status(400).json({ success: false, message: 'Data tidak lengkap. Nomor PPU wajib diisi.' });
     }
 
     // Tambahkan timestamp saat data disimpan

@@ -1,16 +1,6 @@
 // /api/users.js
 import { kv } from '@vercel/kv';
-
-const DEFAULT_USERS = {
-  krisandi: { password: '12345', role: 'admin', createdAt: new Date().toISOString() },
-  wira: { password: '12345', role: 'user', createdAt: new Date().toISOString() },
-  denny: { password: '12345', role: 'user', createdAt: new Date().toISOString() },
-  valdy: { password: '12345', role: 'user', createdAt: new Date().toISOString() },
-  astri: { password: '12345', role: 'user', createdAt: new Date().toISOString() },
-  isparmo: { password: '12345', role: 'user', createdAt: new Date().toISOString() },
-  zaman: { password: '12345', role: 'user', createdAt: new Date().toISOString() },
-  rifa: { password: '12345', role: 'user', createdAt: new Date().toISOString() }
-};
+import { endSession, requireSession, startSession } from '../session.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
@@ -18,20 +8,15 @@ export default async function handler(request, response) {
   }
 
   try {
-    const { action, username, password, adminUsername, newUsername, newPassword, targetUsername, role } = request.body || {};
+    const { action, username, password, newUsername, newPassword, targetUsername, role } = request.body || {};
 
-    // Ambil data user dari Vercel KV
-    let users = await kv.get('app_users');
-    if (!users || typeof users !== 'object' || Object.keys(users).length === 0) {
-      users = { ...DEFAULT_USERS };
-      await kv.set('app_users', users);
-    } else {
-      // Pastikan akun master admin selalu ada
-      if (!users['krisandi']) {
-        users['krisandi'] = { password: '12345', role: 'admin', createdAt: new Date().toISOString() };
-        await kv.set('app_users', users);
-      }
+    response.setHeader('Cache-Control', 'no-store');
+    if (action === 'logout') {
+      await endSession(request, response);
+      return response.status(200).json({ success: true });
     }
+
+    const users = await kv.get('app_users') || {};
 
     // 1. ACTION: LOGIN
     if (action === 'login') {
@@ -41,9 +26,10 @@ export default async function handler(request, response) {
       const cleanUsername = String(username).trim().toLowerCase();
       const cleanPassword = String(password);
 
-      const user = users[cleanUsername];
+      const user = Object.hasOwn(users, cleanUsername) && users[cleanUsername];
       if (user && user.password === cleanPassword) {
         const userRole = user.role || (cleanUsername === 'krisandi' ? 'admin' : 'user');
+        await startSession(response, cleanUsername, user);
         return response.status(200).json({
           success: true,
           username: cleanUsername,
@@ -57,18 +43,19 @@ export default async function handler(request, response) {
       });
     }
 
-    // Helper untuk memverifikasi role Admin untuk aksi manajemen user
-    const cleanAdmin = String(adminUsername || '').trim().toLowerCase();
-    const adminUser = users[cleanAdmin];
-    if (!adminUser || adminUser.role !== 'admin') {
+    const session = await requireSession(request, response, users);
+    if (!session) return;
+    if (action === 'session') return response.status(200).json({ success: true, ...session });
+    if (session.role !== 'admin') {
       return response.status(403).json({ success: false, message: 'Akses ditolak. Hanya Admin yang dapat mengelola pengguna.' });
     }
+    const cleanAdmin = session.username;
 
     // 2. ACTION: LIST USERS
     if (action === 'list') {
       const userList = Object.keys(users).map(uname => ({
         username: uname,
-        role: users[uname].role || (uname === 'krisandi' ? 'admin' : 'user'),
+        role: users[uname].role || 'user',
         createdAt: users[uname].createdAt || null
       }));
       // Urutkan admin di atas, lalu alfabetis
@@ -94,7 +81,7 @@ export default async function handler(request, response) {
         });
       }
 
-      if (users[cleanNewUser]) {
+      if (Object.hasOwn(users, cleanNewUser)) {
         return response.status(400).json({ success: false, message: `Username "${cleanNewUser}" sudah terdaftar.` });
       }
 
@@ -119,7 +106,7 @@ export default async function handler(request, response) {
       }
 
       const cleanTarget = String(targetUsername).trim().toLowerCase();
-      if (!users[cleanTarget]) {
+      if (!Object.hasOwn(users, cleanTarget)) {
         return response.status(404).json({ success: false, message: `Pengguna "${cleanTarget}" tidak ditemukan.` });
       }
 
@@ -147,7 +134,7 @@ export default async function handler(request, response) {
         return response.status(400).json({ success: false, message: 'Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif.' });
       }
 
-      if (!users[cleanTarget]) {
+      if (!Object.hasOwn(users, cleanTarget)) {
         return response.status(404).json({ success: false, message: `Pengguna "${cleanTarget}" tidak ditemukan.` });
       }
 

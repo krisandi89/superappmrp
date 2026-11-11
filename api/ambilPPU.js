@@ -1,5 +1,6 @@
 // /api/ambilPPU.js
 import { kv } from '@vercel/kv';
+import { requireSession, isDocumentNumber } from '../session.js';
 
 // Fungsi utama yang akan dijalankan oleh Vercel
 export default async function handler(request, response) {
@@ -9,11 +10,14 @@ export default async function handler(request, response) {
   }
 
   try {
+    const session = await requireSession(request, response);
+    if (!session) return;
+    const { username } = session;
     // Menggunakan 'number' agar konsisten dengan panggilan dari frontend
-    const { number, username } = request.query;
+    const { number } = request.query || {};
 
-    if (!number || !username) {
-      return response.status(400).json({ success: false, message: 'Nomor PPU dan Username diperlukan.' });
+    if (!isDocumentNumber(number, 'PPU')) {
+      return response.status(400).json({ success: false, message: 'Nomor PPU diperlukan.' });
     }
 
     // Buat kunci yang benar untuk mengambil data

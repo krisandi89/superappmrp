@@ -1,5 +1,6 @@
 // /api/ambilSemuaNomorPPU.js
 import { kv } from '@vercel/kv';
+import { requireSession } from '../session.js';
 
 // Fungsi utama yang akan dijalankan oleh Vercel
 export default async function handler(request, response) {
@@ -9,23 +10,28 @@ export default async function handler(request, response) {
   }
 
   try {
+    const session = await requireSession(request, response);
+    if (!session) return;
+    const { username } = session;
     // Ambil username dari query URL
-    const { username } = request.query;
-    if (!username) {
-        return response.status(400).json({ success: false, message: 'Username diperlukan.' });
-    }
-
     const keys = [];
     // Buat pola pencarian kunci berdasarkan username
     const matchPattern = `${username}-PPU-*`;
-    
+
     // Pindai semua kunci di database yang cocok dengan pola
     for await (const key of kv.scanIterator({ match: matchPattern })) {
       keys.push(key);
     }
 
-    // Kirim semua kunci yang ditemukan sebagai respon
-    return response.status(200).json({ success: true, keys: keys });
+    const linkedPpus = [];
+    if (request.query?.includeRekap === '1') {
+      for (let offset = 0; offset < keys.length; offset += 100) {
+        const numbers = keys.slice(offset, offset + 100).map(key => key.slice(username.length + 1));
+        const links = await kv.mget(...numbers.map(number => 'mrp:rekap:' + username + ':' + number));
+        links.forEach((link, index) => { if (link) linkedPpus.push(numbers[index]); });
+      }
+    }
+    return response.status(200).json({ success: true, keys, linkedPpus });
 
   } catch (error) {
     console.error('Error saat mengambil semua kunci PPU:', error);

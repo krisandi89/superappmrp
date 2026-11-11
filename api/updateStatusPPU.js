@@ -1,5 +1,6 @@
 ﻿// /api/updateStatusPPU.js
 import { kv } from '@vercel/kv';
+import { requireSession, isDocumentNumber } from '../session.js';
 
 export default async function handler(request, response) {
   if (request.method !== 'POST') {
@@ -7,10 +8,13 @@ export default async function handler(request, response) {
   }
 
   try {
-    const { username, ppuNumber, isRekapDone } = request.body;
+    const session = await requireSession(request, response);
+    if (!session) return;
+    const { username } = session;
+    const { ppuNumber, isRekapDone } = request.body || {};
 
-    if (!username || !ppuNumber || isRekapDone === undefined) {
-      return response.status(400).json({ success: false, message: 'Data tidak lengkap. Username, ppuNumber, dan isRekapDone wajib diisi.' });
+    if (!isDocumentNumber(ppuNumber, 'PPU') || isRekapDone === undefined) {
+      return response.status(400).json({ success: false, message: 'Data tidak lengkap. Nomor PPU dan status wajib diisi.' });
     }
 
     const key = `${username}-${ppuNumber}`;

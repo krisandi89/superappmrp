@@ -1,5 +1,6 @@
 // /api/hapusPPU.js
 import { kv } from '@vercel/kv';
+import { requireSession, isDocumentNumber } from '../session.js';
 
 // Fungsi utama untuk menangani request hapus PPU
 export default async function handler(request, response) {
@@ -9,11 +10,14 @@ export default async function handler(request, response) {
   }
 
   try {
+    const session = await requireSession(request, response);
+    if (!session) return;
+    const { username } = session;
     // Menggunakan 'number' agar konsisten dengan panggilan dari frontend
-    const { username, number } = request.body;
+    const { number } = request.body || {};
 
-    if (!username || !number) {
-      return response.status(400).json({ success: false, message: 'Username dan Nomor PPU diperlukan.' });
+    if (!isDocumentNumber(number, 'PPU')) {
+      return response.status(400).json({ success: false, message: 'Nomor PPU diperlukan.' });
     }
 
     // Buat kunci yang akan dihapus
