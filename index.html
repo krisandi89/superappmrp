@@ -1191,7 +1191,7 @@
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.dataset.id = data.projectInfo.ppuNumber;
-                card.style.cssText = 'display: flex; flex-direction: column; justify-content: space-between; position: relative; transition: all 0.3s ease; cursor: grab;';
+                card.style.cssText = 'display: flex; flex-direction: column; justify-content: space-between; position: relative; transition: all 0.3s ease; cursor: pointer;';
                 card.onmouseover = () => { card.style.transform = 'translateY(-5px)'; card.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)'; };
                 card.onmouseout = () => { card.style.transform = 'none'; card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'; };
 
@@ -1227,10 +1227,11 @@
                 `;
                 const openButton = document.createElement('button');
                 openButton.type = 'button';
-                openButton.className = 'btn btn-outline';
+                openButton.className = 'btn btn-secondary';
                 openButton.textContent = actionLabel;
                 openButton.style.marginTop = '12px';
-                openButton.addEventListener('click', () => {
+                card.addEventListener('click', event => {
+                    if (event.target.closest('[data-action]')) return;
                     if (importing) window.rekap_selectPpu(data);
                     else window.ppu_loadData(data);
                 });
@@ -1279,7 +1280,7 @@
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.dataset.id = data.projectInfo.rekapNumber;
-                card.style.cssText = 'display: flex; flex-direction: column; justify-content: space-between; position: relative; transition: all 0.3s ease; cursor: grab;';
+                card.style.cssText = 'display: flex; flex-direction: column; justify-content: space-between; position: relative; transition: all 0.3s ease; cursor: pointer;';
                 card.onmouseover = () => { card.style.transform = 'translateY(-5px)'; card.style.boxShadow = '0 8px 16px rgba(0,0,0,0.1)'; };
                 card.onmouseout = () => { card.style.transform = 'none'; card.style.boxShadow = '0 4px 12px rgba(0,0,0,0.05)'; };
                 
@@ -1306,10 +1307,13 @@
                 `;
                 const openButton = document.createElement('button');
                 openButton.type = 'button';
-                openButton.className = 'btn btn-outline';
+                openButton.className = 'btn btn-secondary';
                 openButton.textContent = 'Buka Rekap';
                 openButton.style.marginTop = '12px';
-                openButton.addEventListener('click', () => window.rekap_loadData(data));
+                card.addEventListener('click', event => {
+                    if (event.target.closest('[data-action]')) return;
+                    window.rekap_loadData(data);
+                });
                 card.appendChild(openButton);
                 card.querySelector('[data-action="delete"]').addEventListener('click', event => global_handleDelete(event, data.projectInfo.rekapNumber, 'rekap'));
                 container.appendChild(card);
